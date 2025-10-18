@@ -3,7 +3,7 @@
 getgenv().PhantomXConfig = {
     StatsUiEnabled = true,   -- Run the PhantomX GUI once
     FastFarmEnabled = true,   -- Run the Fast Farm once
-    FPSCap = 5,              -- FPS cap setting
+    FPSCap = 165,              -- FPS cap setting
     WebhookURL = "",         -- Your Discord webhook URL
     DiscordID = "",          -- Your Discord user ID for pings
     ShowUsername = true,     -- Show username in UI (true) or hide it (false)
@@ -15,7 +15,7 @@ getgenv().PhantomXConfig = {
             ["Tap Power 7"] = {Class = "Enchant", Amount = 6 },
         },
         ['Loop Interval'] = 60,
-        ['Users'] = {""},  -- Replace with actual username(s)
+        ['Users'] = {"xxprozombix"},  -- Replace with actual username(s)
     },
     AutoDaycare = true,      -- Auto daycare management
     AutoClaimMailbox = true, -- Auto claim mailbox
@@ -2775,4 +2775,5 @@ Network.Fired("Items: Update"):Connect(function(_, Inventory)
             end
         end
     end
+
 end)
